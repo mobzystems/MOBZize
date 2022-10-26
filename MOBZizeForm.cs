@@ -1,8 +1,11 @@
 using MOBZize.Properties;
+using System.CodeDom;
+using System.Collections;
 using System.Configuration;
 using System.Diagnostics;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Xml;
 
 namespace MOBZize
 {
@@ -45,11 +48,12 @@ namespace MOBZize
       _openButton.ImageList = _imageList;
       _openButton.ImageKey = ICON_FOLDER_OPEN;
 
-      _depthListBox.SelectedIndex = 0;
-
-      _progressLabel.Text = "Open a directory to get started.";
+      _statusLabel.Text = "Open a folder to get started.";
 
       _lastOpenedPath = Environment.CurrentDirectory;
+
+      // Start by sorting on size descending
+      _listView.ListViewItemSorter = new SizeSorter(false);
     }
 
     /// <summary>
@@ -62,16 +66,9 @@ namespace MOBZize
       {
         _rootPath = Environment.GetCommandLineArgs()[1];
 
-        //int depth = 0;
-        //if (Environment.GetCommandLineArgs().Length > 2)
-        //  int.TryParse(Environment.GetCommandLineArgs()[2], out depth);
-
         await LoadSecurityAsync(_rootPath);
 
         _lastOpenedPath = Path.GetFullPath(_rootPath);
-        //// Update the combo box if we chose an applicable depth
-        //if (depth < _depthListBox.Items.Count)
-        //  _depthListBox.SelectedIndex = depth;
       }
     }
 
@@ -90,7 +87,7 @@ namespace MOBZize
         // Hide the Open button, show the Cancel button
         _cancelled = false;
         _openPanel.Visible = false;
-        _progressLabel.Text = $"Loading '{path}'...";
+        _statusLabel.Text = $"Loading '{path}'...";
         _cancelButton.Visible = true;
 
         // Keep a (case insensitive!) tab on which directory was added to the tree where
@@ -137,7 +134,7 @@ namespace MOBZize
             // Update the status label USING INVOKE()
             Invoke(() =>
             {
-              _statusLabel.Text = name;
+              _infoLabel.Text = name;
             });
 
             lastUpdateTime = time;
@@ -172,7 +169,7 @@ namespace MOBZize
 
         if (a != null)
         {
-          _progressLabel.Text = "Displaying results...";
+          _statusLabel.Text = "Displaying results...";
           _topPanel.Update();
 
           _treeView.BeginUpdate();
@@ -195,7 +192,7 @@ namespace MOBZize
         }
         else
         {
-          _progressLabel.Text = $"Failed to load '{path}'";
+          _statusLabel.Text = $"Failed to load '{path}'";
         }
 
         // Re-enable Open button
@@ -250,12 +247,13 @@ namespace MOBZize
       if (e.Node != null && e.Node.Tag != null)
       {
         var dir = (SizeDirectory)e.Node.Tag;
-        _progressLabel.Text = $"{dir.FullName} contains {dir.SizeInBytes:#,,0} byte(s).";
-        _statusLabel.Text = $"{dir.Files.Count} file(s), {dir.Directories.Count} directories. Total size: {dir.SizeInBytes:#,,0} byte(s).";
+        _statusLabel.Text = $"{dir.FullName} contains {dir.SizeInBytes:#,,0} byte(s).";
+        _infoLabel.Text = $"{dir.Files.Count:#,,0} file(s) (total: {dir.TotalFileCount:#,,0}, {dir.Directories.Count} folder(s) (total: {dir.TotalDirectoryCount:#,,0}). Total size: {dir.SizeInBytes:#,,0} byte(s).";
 
         foreach (var subdir in dir.Directories)
         {
-          var item = _listView.Items.Add(subdir.Name);
+          var item = new ListViewItem(subdir.Name);
+
           item.Tag = subdir;
           item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
           item.SubItems.Add(PercentageOf(subdir.SizeInBytes, dir.SizeInBytes));
@@ -266,20 +264,26 @@ namespace MOBZize
             item.ImageKey = ICON_FOLDER;
           else
             item.ImageKey = ICON_ERROR;
+
+          _listView.Items.Add(item);
         }
 
         foreach (var file in dir.Files)
         {
-          var item = _listView.Items.Add(file.Name);
+          var item = new ListViewItem(file.Name);
+
           item.Tag = file;
           item.SubItems.Add(file.SizeInBytes.ToString("#,,0"));
           item.SubItems.Add(PercentageOf(file.SizeInBytes, dir.SizeInBytes));
           item.SubItems.Add("-"); // Files
           item.SubItems.Add("-"); // Directories
+
           if (file.Exception == null)
             item.ImageKey = ICON_FILE;
           else
             item.ImageKey = ICON_ERROR;
+
+          _listView.Items.Add(item);
         }
       }
     }
@@ -335,6 +339,102 @@ namespace MOBZize
         var path = ((SizeDirectory)_treeView.SelectedNode.Tag).FullName;
         Process.Start("explorer.exe", $"/select,\"{path}\"");
       }
+    }
+
+    private bool _sortAscending = true;
+    private int _sortColumnIndex = 1;
+
+    private abstract class ListViewSorter : IComparer
+    {
+      protected int _factor;
+
+      public ListViewSorter(bool ascending)
+      {
+        _factor = ascending ? 1 : -1;
+      }
+
+      public abstract int CompareItems(SizeItem item1, SizeItem item2);
+
+      public int Compare(object? x, object? y)
+      {
+        //if (x == null && y == null)
+        //  return 0;
+        //if (x != null && y != null)
+          return _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
+        //return y == null ? 1 : -1;
+      }
+    }
+
+    private class NameSorter : ListViewSorter
+    {
+      public NameSorter(bool ascending) : base(ascending) { }
+
+      public override int CompareItems(SizeItem item1, SizeItem item2)
+      {
+        if (item1.GetType() == item2.GetType())
+          return string.Compare(item1.Name, item2.Name, true);
+        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
+      }
+    }
+
+    private class SizeSorter : ListViewSorter
+    {
+      public SizeSorter(bool ascending) : base(ascending) { }
+
+      public override int CompareItems(SizeItem item1, SizeItem item2)
+      {
+        return item1.SizeInBytes.CompareTo(item2.SizeInBytes);
+      }
+    }
+
+    private class FileCountSorter : ListViewSorter
+    {
+      public FileCountSorter(bool ascending) : base(ascending) { }
+
+      public override int CompareItems(SizeItem item1, SizeItem item2)
+      { 
+        if (item1 is SizeDirectory && item2 is SizeDirectory)
+          return ((SizeDirectory)item1).TotalFileCount.CompareTo(((SizeDirectory)item2).TotalFileCount);
+        if (item1 is SizeFile && item2 is SizeFile)
+          return string.Compare(item1.Name, item2.Name, true);
+        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
+      }
+    }
+
+    private class FolderCountSorter : ListViewSorter
+    {
+      public FolderCountSorter(bool ascending) : base(ascending) { }
+
+      public override int CompareItems(SizeItem item1, SizeItem item2)
+      {
+        if (item1 is SizeDirectory && item2 is SizeDirectory)
+          return ((SizeDirectory)item1).TotalDirectoryCount.CompareTo(((SizeDirectory)item2).TotalDirectoryCount);
+        if (item1 is SizeFile && item2 is SizeFile)
+          return string.Compare(item1.Name, item2.Name, true);
+        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
+      }
+    }
+
+    private void _listView_ColumnClick(object sender, ColumnClickEventArgs e)
+    {
+      if (e.Column == _sortColumnIndex)
+        _sortAscending = !_sortAscending;
+      else
+      {
+        _sortColumnIndex = e.Column;
+        _sortAscending = true;
+      }
+
+      _listView.ListViewItemSorter = e.Column switch
+      {
+        1 => new SizeSorter(_sortAscending), // Size
+        2 => new SizeSorter(_sortAscending), // Percentage
+        3 => new FileCountSorter(_sortAscending), // Files
+        4 => new FolderCountSorter(_sortAscending), // Folders
+        _ => new NameSorter(_sortAscending)
+      };
+      //_listView.Sort();
+      //_listView.ListViewItemSorter = null;
     }
   }
 }

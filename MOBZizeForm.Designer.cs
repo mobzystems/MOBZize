@@ -30,7 +30,7 @@
     {
       this.components = new System.ComponentModel.Container();
       System.Windows.Forms.StatusStrip statusStrip1;
-      this._statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+      this._infoLabel = new System.Windows.Forms.ToolStripStatusLabel();
       this._splitContainer = new System.Windows.Forms.SplitContainer();
       this._treeView = new System.Windows.Forms.TreeView();
       this._treeViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -39,14 +39,13 @@
       this._nameColumn = new System.Windows.Forms.ColumnHeader();
       this._rightsColumn = new System.Windows.Forms.ColumnHeader();
       this._perentageColumn = new System.Windows.Forms.ColumnHeader();
-      this._topPanel = new System.Windows.Forms.Panel();
-      this._progressLabel = new System.Windows.Forms.Label();
-      this._cancelButton = new System.Windows.Forms.Button();
-      this._openPanel = new System.Windows.Forms.Panel();
-      this._depthListBox = new System.Windows.Forms.ComboBox();
-      this._openButton = new System.Windows.Forms.Button();
       this._filesColumn = new System.Windows.Forms.ColumnHeader();
       this._directoriesColumn = new System.Windows.Forms.ColumnHeader();
+      this._topPanel = new System.Windows.Forms.Panel();
+      this._statusLabel = new System.Windows.Forms.Label();
+      this._cancelButton = new System.Windows.Forms.Button();
+      this._openPanel = new System.Windows.Forms.Panel();
+      this._openButton = new System.Windows.Forms.Button();
       statusStrip1 = new System.Windows.Forms.StatusStrip();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this._splitContainer)).BeginInit();
@@ -61,20 +60,20 @@
       // statusStrip1
       // 
       statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this._statusLabel});
+            this._infoLabel});
       statusStrip1.Location = new System.Drawing.Point(0, 428);
       statusStrip1.Name = "statusStrip1";
       statusStrip1.Size = new System.Drawing.Size(800, 22);
       statusStrip1.TabIndex = 2;
       statusStrip1.Text = "_statusStrip";
       // 
-      // _statusLabel
+      // _infoLabel
       // 
-      this._statusLabel.Name = "_statusLabel";
-      this._statusLabel.Size = new System.Drawing.Size(785, 17);
-      this._statusLabel.Spring = true;
-      this._statusLabel.Text = "Ready";
-      this._statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+      this._infoLabel.Name = "_infoLabel";
+      this._infoLabel.Size = new System.Drawing.Size(785, 17);
+      this._infoLabel.Spring = true;
+      this._infoLabel.Text = "Ready";
+      this._infoLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
       // 
       // _splitContainer
       // 
@@ -130,7 +129,6 @@
             this._directoriesColumn});
       this._listView.Dock = System.Windows.Forms.DockStyle.Fill;
       this._listView.FullRowSelect = true;
-      this._listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
       this._listView.HideSelection = true;
       this._listView.Location = new System.Drawing.Point(0, 0);
       this._listView.Name = "_listView";
@@ -138,6 +136,7 @@
       this._listView.TabIndex = 0;
       this._listView.UseCompatibleStateImageBehavior = false;
       this._listView.View = System.Windows.Forms.View.Details;
+      this._listView.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this._listView_ColumnClick);
       // 
       // _nameColumn
       // 
@@ -156,80 +155,6 @@
       this._perentageColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       this._perentageColumn.Width = 50;
       // 
-      // _topPanel
-      // 
-      this._topPanel.Controls.Add(this._progressLabel);
-      this._topPanel.Controls.Add(this._cancelButton);
-      this._topPanel.Controls.Add(this._openPanel);
-      this._topPanel.Dock = System.Windows.Forms.DockStyle.Top;
-      this._topPanel.Location = new System.Drawing.Point(0, 0);
-      this._topPanel.Name = "_topPanel";
-      this._topPanel.Size = new System.Drawing.Size(800, 32);
-      this._topPanel.TabIndex = 1;
-      // 
-      // _progressLabel
-      // 
-      this._progressLabel.AutoEllipsis = true;
-      this._progressLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-      this._progressLabel.Location = new System.Drawing.Point(408, 0);
-      this._progressLabel.Name = "_progressLabel";
-      this._progressLabel.Size = new System.Drawing.Size(392, 32);
-      this._progressLabel.TabIndex = 2;
-      this._progressLabel.Text = "...";
-      this._progressLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-      this._progressLabel.UseMnemonic = false;
-      // 
-      // _cancelButton
-      // 
-      this._cancelButton.Dock = System.Windows.Forms.DockStyle.Left;
-      this._cancelButton.Location = new System.Drawing.Point(333, 0);
-      this._cancelButton.Name = "_cancelButton";
-      this._cancelButton.Size = new System.Drawing.Size(75, 32);
-      this._cancelButton.TabIndex = 1;
-      this._cancelButton.Text = "Cancel";
-      this._cancelButton.UseVisualStyleBackColor = true;
-      this._cancelButton.Visible = false;
-      this._cancelButton.Click += new System.EventHandler(this._cancelButton_Click);
-      // 
-      // _openPanel
-      // 
-      this._openPanel.Controls.Add(this._depthListBox);
-      this._openPanel.Controls.Add(this._openButton);
-      this._openPanel.Dock = System.Windows.Forms.DockStyle.Left;
-      this._openPanel.Location = new System.Drawing.Point(0, 0);
-      this._openPanel.Name = "_openPanel";
-      this._openPanel.Size = new System.Drawing.Size(333, 32);
-      this._openPanel.TabIndex = 3;
-      // 
-      // _depthListBox
-      // 
-      this._depthListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-      this._depthListBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this._depthListBox.FormattingEnabled = true;
-      this._depthListBox.ItemHeight = 15;
-      this._depthListBox.Items.AddRange(new object[] {
-            "Load all subdirectories",
-            "Load top directory only",
-            "Top directory and subdirectories",
-            "Top directory and 2 subdirectories",
-            "Top directory and 3 subdirectories"});
-      this._depthListBox.Location = new System.Drawing.Point(110, 4);
-      this._depthListBox.Name = "_depthListBox";
-      this._depthListBox.Size = new System.Drawing.Size(217, 23);
-      this._depthListBox.TabIndex = 2;
-      // 
-      // _openButton
-      // 
-      this._openButton.Dock = System.Windows.Forms.DockStyle.Left;
-      this._openButton.Location = new System.Drawing.Point(0, 0);
-      this._openButton.Name = "_openButton";
-      this._openButton.Size = new System.Drawing.Size(104, 32);
-      this._openButton.TabIndex = 0;
-      this._openButton.Text = "Open...";
-      this._openButton.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-      this._openButton.Click += new System.EventHandler(this._openButton_Click);
-      // 
       // _filesColumn
       // 
       this._filesColumn.Text = "Files";
@@ -241,6 +166,61 @@
       this._directoriesColumn.Text = "Folders";
       this._directoriesColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       this._directoriesColumn.Width = 100;
+      // 
+      // _topPanel
+      // 
+      this._topPanel.Controls.Add(this._statusLabel);
+      this._topPanel.Controls.Add(this._cancelButton);
+      this._topPanel.Controls.Add(this._openPanel);
+      this._topPanel.Dock = System.Windows.Forms.DockStyle.Top;
+      this._topPanel.Location = new System.Drawing.Point(0, 0);
+      this._topPanel.Name = "_topPanel";
+      this._topPanel.Size = new System.Drawing.Size(800, 32);
+      this._topPanel.TabIndex = 1;
+      // 
+      // _statusLabel
+      // 
+      this._statusLabel.AutoEllipsis = true;
+      this._statusLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+      this._statusLabel.Location = new System.Drawing.Point(180, 0);
+      this._statusLabel.Name = "_statusLabel";
+      this._statusLabel.Size = new System.Drawing.Size(620, 32);
+      this._statusLabel.TabIndex = 2;
+      this._statusLabel.Text = "...";
+      this._statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+      this._statusLabel.UseMnemonic = false;
+      // 
+      // _cancelButton
+      // 
+      this._cancelButton.Dock = System.Windows.Forms.DockStyle.Left;
+      this._cancelButton.Location = new System.Drawing.Point(105, 0);
+      this._cancelButton.Name = "_cancelButton";
+      this._cancelButton.Size = new System.Drawing.Size(75, 32);
+      this._cancelButton.TabIndex = 1;
+      this._cancelButton.Text = "Cancel";
+      this._cancelButton.UseVisualStyleBackColor = true;
+      this._cancelButton.Visible = false;
+      this._cancelButton.Click += new System.EventHandler(this._cancelButton_Click);
+      // 
+      // _openPanel
+      // 
+      this._openPanel.Controls.Add(this._openButton);
+      this._openPanel.Dock = System.Windows.Forms.DockStyle.Left;
+      this._openPanel.Location = new System.Drawing.Point(0, 0);
+      this._openPanel.Name = "_openPanel";
+      this._openPanel.Size = new System.Drawing.Size(105, 32);
+      this._openPanel.TabIndex = 3;
+      // 
+      // _openButton
+      // 
+      this._openButton.Dock = System.Windows.Forms.DockStyle.Left;
+      this._openButton.Location = new System.Drawing.Point(0, 0);
+      this._openButton.Name = "_openButton";
+      this._openButton.Size = new System.Drawing.Size(104, 32);
+      this._openButton.TabIndex = 0;
+      this._openButton.Text = "Open...";
+      this._openButton.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+      this._openButton.Click += new System.EventHandler(this._openButton_Click);
       // 
       // MOBZizeForm
       // 
@@ -276,14 +256,12 @@
     private Panel _topPanel;
     private Button _openButton;
     private ColumnHeader _rightsColumn;
-    private Label _progressLabel;
+    private Label _statusLabel;
     private Button _cancelButton;
     private Panel _openPanel;
-    private ComboBox _depthListBox;
     private ContextMenuStrip _treeViewContextMenu;
     private ToolStripMenuItem _showInExplorerMenuItem;
-    private StatusStrip statusStrip1;
-    private ToolStripStatusLabel _statusLabel;
+    private ToolStripStatusLabel _infoLabel;
     private ColumnHeader _perentageColumn;
     private ColumnHeader _filesColumn;
     private ColumnHeader _directoriesColumn;
