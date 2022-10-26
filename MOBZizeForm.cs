@@ -47,7 +47,7 @@ namespace MOBZize
 
       _depthListBox.SelectedIndex = 0;
 
-      _statusLabel.Text = "Open a directory to get started.";
+      _progressLabel.Text = "Open a directory to get started.";
 
       _lastOpenedPath = Environment.CurrentDirectory;
     }
@@ -90,7 +90,7 @@ namespace MOBZize
         // Hide the Open button, show the Cancel button
         _cancelled = false;
         _openPanel.Visible = false;
-        _statusLabel.Text = $"Loading '{path}'...";
+        _progressLabel.Text = $"Loading '{path}'...";
         _cancelButton.Visible = true;
 
         // Keep a (case insensitive!) tab on which directory was added to the tree where
@@ -137,7 +137,7 @@ namespace MOBZize
             // Update the status label USING INVOKE()
             Invoke(() =>
             {
-              _statusLabel.Text = name;
+              _progressLabel.Text = name;
             });
 
             lastUpdateTime = time;
@@ -172,7 +172,7 @@ namespace MOBZize
 
         if (a != null)
         {
-          _statusLabel.Text = "Displaying results...";
+          _progressLabel.Text = "Displaying results...";
           _topPanel.Update();
 
           _treeView.BeginUpdate();
@@ -195,7 +195,7 @@ namespace MOBZize
         }
         else
         {
-          _statusLabel.Text = $"Failed to load '{path}'";
+          _progressLabel.Text = $"Failed to load '{path}'";
         }
 
         // Re-enable Open button
@@ -250,13 +250,15 @@ namespace MOBZize
       if (e.Node != null && e.Node.Tag != null)
       {
         var dir = (SizeDirectory)e.Node.Tag;
-        _statusLabel.Text = $"{dir.FullName} contains {dir.Files.Count} file(s), {dir.Directories.Count} directories. Total size: {dir.SizeInBytes:#,,0} byte(s).";
+        _progressLabel.Text = $"{dir.FullName} contains {dir.SizeInBytes:#,,0} byte(s).";
+        _statusLabel.Text = $"{dir.Files.Count} file(s), {dir.Directories.Count} directories. Total size: {dir.SizeInBytes:#,,0} byte(s).";
 
         foreach (var subdir in dir.Directories)
         {
           var item = _listView.Items.Add(subdir.Name);
           item.Tag = subdir;
           item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
+          item.SubItems.Add(PercentageOf(subdir.SizeInBytes, dir.SizeInBytes));
           if (subdir.Exception == null)
             item.ImageKey = ICON_FOLDER;
           else
@@ -268,12 +270,20 @@ namespace MOBZize
           var item = _listView.Items.Add(file.Name);
           item.Tag = file;
           item.SubItems.Add(file.SizeInBytes.ToString("#,,0"));
+          item.SubItems.Add(PercentageOf(file.SizeInBytes, dir.SizeInBytes));
           if (file.Exception == null)
             item.ImageKey = ICON_FILE;
           else
             item.ImageKey = ICON_ERROR;
         }
       }
+    }
+
+    private string PercentageOf(long n, long total)
+    {
+      if (total == 0)
+        return "-";
+      return ((double)n / total).ToString("##0%");
     }
 
     /// <summary>

@@ -29,6 +29,8 @@
     private void InitializeComponent()
     {
       this.components = new System.ComponentModel.Container();
+      System.Windows.Forms.StatusStrip statusStrip1;
+      this._statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
       this._splitContainer = new System.Windows.Forms.SplitContainer();
       this._treeView = new System.Windows.Forms.TreeView();
       this._treeViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -37,11 +39,14 @@
       this._nameColumn = new System.Windows.Forms.ColumnHeader();
       this._rightsColumn = new System.Windows.Forms.ColumnHeader();
       this._topPanel = new System.Windows.Forms.Panel();
-      this._statusLabel = new System.Windows.Forms.Label();
+      this._progressLabel = new System.Windows.Forms.Label();
       this._cancelButton = new System.Windows.Forms.Button();
       this._openPanel = new System.Windows.Forms.Panel();
       this._depthListBox = new System.Windows.Forms.ComboBox();
       this._openButton = new System.Windows.Forms.Button();
+      this._perentageColumn = new System.Windows.Forms.ColumnHeader();
+      statusStrip1 = new System.Windows.Forms.StatusStrip();
+      statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this._splitContainer)).BeginInit();
       this._splitContainer.Panel1.SuspendLayout();
       this._splitContainer.Panel2.SuspendLayout();
@@ -50,6 +55,24 @@
       this._topPanel.SuspendLayout();
       this._openPanel.SuspendLayout();
       this.SuspendLayout();
+      // 
+      // statusStrip1
+      // 
+      statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this._statusLabel});
+      statusStrip1.Location = new System.Drawing.Point(0, 428);
+      statusStrip1.Name = "statusStrip1";
+      statusStrip1.Size = new System.Drawing.Size(800, 22);
+      statusStrip1.TabIndex = 2;
+      statusStrip1.Text = "_statusStrip";
+      // 
+      // _nameLabel
+      // 
+      this._statusLabel.Name = "_nameLabel";
+      this._statusLabel.Size = new System.Drawing.Size(785, 17);
+      this._statusLabel.Spring = true;
+      this._statusLabel.Text = "Ready";
+      this._statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
       // 
       // _splitContainer
       // 
@@ -64,7 +87,7 @@
       // _splitContainer.Panel2
       // 
       this._splitContainer.Panel2.Controls.Add(this._listView);
-      this._splitContainer.Size = new System.Drawing.Size(800, 418);
+      this._splitContainer.Size = new System.Drawing.Size(800, 396);
       this._splitContainer.SplitterDistance = 266;
       this._splitContainer.TabIndex = 0;
       // 
@@ -76,7 +99,7 @@
       this._treeView.HideSelection = false;
       this._treeView.Location = new System.Drawing.Point(0, 0);
       this._treeView.Name = "_treeView";
-      this._treeView.Size = new System.Drawing.Size(266, 418);
+      this._treeView.Size = new System.Drawing.Size(266, 396);
       this._treeView.TabIndex = 0;
       this._treeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this._treeView_AfterSelect);
       this._treeView.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this._treeView_NodeMouseClick);
@@ -99,14 +122,15 @@
       // 
       this._listView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this._nameColumn,
-            this._rightsColumn});
+            this._rightsColumn,
+            this._perentageColumn});
       this._listView.Dock = System.Windows.Forms.DockStyle.Fill;
       this._listView.FullRowSelect = true;
       this._listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
       this._listView.HideSelection = true;
       this._listView.Location = new System.Drawing.Point(0, 0);
       this._listView.Name = "_listView";
-      this._listView.Size = new System.Drawing.Size(530, 418);
+      this._listView.Size = new System.Drawing.Size(530, 396);
       this._listView.TabIndex = 0;
       this._listView.UseCompatibleStateImageBehavior = false;
       this._listView.View = System.Windows.Forms.View.Details;
@@ -124,7 +148,7 @@
       // 
       // _topPanel
       // 
-      this._topPanel.Controls.Add(this._statusLabel);
+      this._topPanel.Controls.Add(this._progressLabel);
       this._topPanel.Controls.Add(this._cancelButton);
       this._topPanel.Controls.Add(this._openPanel);
       this._topPanel.Dock = System.Windows.Forms.DockStyle.Top;
@@ -135,15 +159,15 @@
       // 
       // _statusLabel
       // 
-      this._statusLabel.AutoEllipsis = true;
-      this._statusLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-      this._statusLabel.Location = new System.Drawing.Point(408, 0);
-      this._statusLabel.Name = "_statusLabel";
-      this._statusLabel.Size = new System.Drawing.Size(392, 32);
-      this._statusLabel.TabIndex = 2;
-      this._statusLabel.Text = "...";
-      this._statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-      this._statusLabel.UseMnemonic = false;
+      this._progressLabel.AutoEllipsis = true;
+      this._progressLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+      this._progressLabel.Location = new System.Drawing.Point(408, 0);
+      this._progressLabel.Name = "_statusLabel";
+      this._progressLabel.Size = new System.Drawing.Size(392, 32);
+      this._progressLabel.TabIndex = 2;
+      this._progressLabel.Text = "...";
+      this._progressLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+      this._progressLabel.UseMnemonic = false;
       // 
       // _cancelButton
       // 
@@ -169,7 +193,7 @@
       // 
       // _depthListBox
       // 
-      this._depthListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+      this._depthListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this._depthListBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
       this._depthListBox.FormattingEnabled = true;
@@ -196,6 +220,12 @@
       this._openButton.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
       this._openButton.Click += new System.EventHandler(this._openButton_Click);
       // 
+      // _perentageColumn
+      // 
+      this._perentageColumn.Text = "%";
+      this._perentageColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      this._perentageColumn.Width = 50;
+      // 
       // MOBZizeForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -203,9 +233,12 @@
       this.ClientSize = new System.Drawing.Size(800, 450);
       this.Controls.Add(this._splitContainer);
       this.Controls.Add(this._topPanel);
+      this.Controls.Add(statusStrip1);
       this.Name = "MOBZizeForm";
       this.Text = "MobZec";
       this.Load += new System.EventHandler(this.MobZecForm_Load);
+      statusStrip1.ResumeLayout(false);
+      statusStrip1.PerformLayout();
       this._splitContainer.Panel1.ResumeLayout(false);
       this._splitContainer.Panel2.ResumeLayout(false);
       ((System.ComponentModel.ISupportInitialize)(this._splitContainer)).EndInit();
@@ -214,6 +247,7 @@
       this._topPanel.ResumeLayout(false);
       this._openPanel.ResumeLayout(false);
       this.ResumeLayout(false);
+      this.PerformLayout();
 
     }
 
@@ -226,11 +260,14 @@
     private Panel _topPanel;
     private Button _openButton;
     private ColumnHeader _rightsColumn;
-    private Label _statusLabel;
+    private Label _progressLabel;
     private Button _cancelButton;
     private Panel _openPanel;
     private ComboBox _depthListBox;
     private ContextMenuStrip _treeViewContextMenu;
     private ToolStripMenuItem _showInExplorerMenuItem;
+    private StatusStrip statusStrip1;
+    private ToolStripStatusLabel _statusLabel;
+    private ColumnHeader _perentageColumn;
   }
 }
