@@ -137,7 +137,7 @@ namespace MOBZize
             // Update the status label USING INVOKE()
             Invoke(() =>
             {
-              _progressLabel.Text = name;
+              _statusLabel.Text = name;
             });
 
             lastUpdateTime = time;
@@ -259,6 +259,9 @@ namespace MOBZize
           item.Tag = subdir;
           item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
           item.SubItems.Add(PercentageOf(subdir.SizeInBytes, dir.SizeInBytes));
+          item.SubItems.Add(subdir.TotalFileCount.ToString("#,,0"));
+          item.SubItems.Add(subdir.TotalDirectoryCount.ToString("#,,0"));
+
           if (subdir.Exception == null)
             item.ImageKey = ICON_FOLDER;
           else
@@ -271,6 +274,8 @@ namespace MOBZize
           item.Tag = file;
           item.SubItems.Add(file.SizeInBytes.ToString("#,,0"));
           item.SubItems.Add(PercentageOf(file.SizeInBytes, dir.SizeInBytes));
+          item.SubItems.Add("-"); // Files
+          item.SubItems.Add("-"); // Directories
           if (file.Exception == null)
             item.ImageKey = ICON_FILE;
           else

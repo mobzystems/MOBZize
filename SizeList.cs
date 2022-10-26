@@ -54,9 +54,15 @@ namespace MOBZize
     public List<SizeDirectory> Directories { get; init; } = new();
     public List<SizeFile> Files { get; init; } = new();
 
+    public int TotalFileCount { get; init; }
+    public int TotalDirectoryCount { get; init; }
+
     protected SizeDirectory(string fullPath, string rootPath, int maxDepth, int currentDepth, Func<string, bool> callback) :
       base(fullPath, rootPath)
     {
+      TotalFileCount = 0;
+      TotalDirectoryCount = 0;
+
       try
       {
         // Get all files and add their sizes:
@@ -65,6 +71,8 @@ namespace MOBZize
           var newFile = new SizeFile(file, rootPath);
           Files.Add(newFile);
           SizeInBytes += newFile.SizeInBytes;
+          // Count this file
+          TotalFileCount++;
         }
 
         if (maxDepth == 0 || currentDepth < maxDepth)
@@ -78,9 +86,15 @@ namespace MOBZize
             // Not cancelled? Then recurse here:
             var newDir = new SizeDirectory(name, rootPath, maxDepth, currentDepth + 1, callback);
             Directories.Add(newDir);
-            // Add it to our size
+            // Add it to our size and counters
             SizeInBytes += newDir.SizeInBytes;
+
+            TotalFileCount += newDir.TotalFileCount;
+            TotalDirectoryCount += newDir.TotalDirectoryCount;
           }
+
+          // Count the directorues themselves
+          TotalDirectoryCount += Directories.Count();
         }
       }
       catch (Exception ex)

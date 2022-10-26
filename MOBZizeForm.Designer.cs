@@ -38,13 +38,15 @@
       this._listView = new System.Windows.Forms.ListView();
       this._nameColumn = new System.Windows.Forms.ColumnHeader();
       this._rightsColumn = new System.Windows.Forms.ColumnHeader();
+      this._perentageColumn = new System.Windows.Forms.ColumnHeader();
       this._topPanel = new System.Windows.Forms.Panel();
       this._progressLabel = new System.Windows.Forms.Label();
       this._cancelButton = new System.Windows.Forms.Button();
       this._openPanel = new System.Windows.Forms.Panel();
       this._depthListBox = new System.Windows.Forms.ComboBox();
       this._openButton = new System.Windows.Forms.Button();
-      this._perentageColumn = new System.Windows.Forms.ColumnHeader();
+      this._filesColumn = new System.Windows.Forms.ColumnHeader();
+      this._directoriesColumn = new System.Windows.Forms.ColumnHeader();
       statusStrip1 = new System.Windows.Forms.StatusStrip();
       statusStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this._splitContainer)).BeginInit();
@@ -66,9 +68,9 @@
       statusStrip1.TabIndex = 2;
       statusStrip1.Text = "_statusStrip";
       // 
-      // _nameLabel
+      // _statusLabel
       // 
-      this._statusLabel.Name = "_nameLabel";
+      this._statusLabel.Name = "_statusLabel";
       this._statusLabel.Size = new System.Drawing.Size(785, 17);
       this._statusLabel.Spring = true;
       this._statusLabel.Text = "Ready";
@@ -123,7 +125,9 @@
       this._listView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this._nameColumn,
             this._rightsColumn,
-            this._perentageColumn});
+            this._perentageColumn,
+            this._filesColumn,
+            this._directoriesColumn});
       this._listView.Dock = System.Windows.Forms.DockStyle.Fill;
       this._listView.FullRowSelect = true;
       this._listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
@@ -146,6 +150,12 @@
       this._rightsColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       this._rightsColumn.Width = 100;
       // 
+      // _perentageColumn
+      // 
+      this._perentageColumn.Text = "%";
+      this._perentageColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      this._perentageColumn.Width = 50;
+      // 
       // _topPanel
       // 
       this._topPanel.Controls.Add(this._progressLabel);
@@ -157,12 +167,12 @@
       this._topPanel.Size = new System.Drawing.Size(800, 32);
       this._topPanel.TabIndex = 1;
       // 
-      // _statusLabel
+      // _progressLabel
       // 
       this._progressLabel.AutoEllipsis = true;
       this._progressLabel.Dock = System.Windows.Forms.DockStyle.Fill;
       this._progressLabel.Location = new System.Drawing.Point(408, 0);
-      this._progressLabel.Name = "_statusLabel";
+      this._progressLabel.Name = "_progressLabel";
       this._progressLabel.Size = new System.Drawing.Size(392, 32);
       this._progressLabel.TabIndex = 2;
       this._progressLabel.Text = "...";
@@ -220,11 +230,17 @@
       this._openButton.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
       this._openButton.Click += new System.EventHandler(this._openButton_Click);
       // 
-      // _perentageColumn
+      // _filesColumn
       // 
-      this._perentageColumn.Text = "%";
-      this._perentageColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-      this._perentageColumn.Width = 50;
+      this._filesColumn.Text = "Files";
+      this._filesColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      this._filesColumn.Width = 100;
+      // 
+      // _directoriesColumn
+      // 
+      this._directoriesColumn.Text = "Folders";
+      this._directoriesColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      this._directoriesColumn.Width = 100;
       // 
       // MOBZizeForm
       // 
@@ -235,7 +251,7 @@
       this.Controls.Add(this._topPanel);
       this.Controls.Add(statusStrip1);
       this.Name = "MOBZizeForm";
-      this.Text = "MobZec";
+      this.Text = "MOBZize";
       this.Load += new System.EventHandler(this.MobZecForm_Load);
       statusStrip1.ResumeLayout(false);
       statusStrip1.PerformLayout();
@@ -269,5 +285,7 @@
     private StatusStrip statusStrip1;
     private ToolStripStatusLabel _statusLabel;
     private ColumnHeader _perentageColumn;
+    private ColumnHeader _filesColumn;
+    private ColumnHeader _directoriesColumn;
   }
 }
