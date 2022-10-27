@@ -66,7 +66,7 @@ namespace MOBZize
       {
         _rootPath = Environment.GetCommandLineArgs()[1];
 
-        await LoadSecurityAsync(_rootPath);
+        await LoadSizesAsync(_rootPath);
 
         _lastOpenedPath = Path.GetFullPath(_rootPath);
       }
@@ -77,7 +77,7 @@ namespace MOBZize
     /// </summary>
     /// <param name="path">The path to load. May be relative</param>
     /// <param name="depth">The depth to load. 0 = all, 1 is path only, 2+ = additional levels</param>
-    private async Task LoadSecurityAsync(string path)
+    private async Task LoadSizesAsync(string path)
     {
       _splitContainer.Enabled = false;
       _splitContainer.UseWaitCursor = true; // Doesn't work?
@@ -104,21 +104,21 @@ namespace MOBZize
         // We only update the status label every so many ms, to prevent it eating CPU
         var lastUpdateTime = DateTime.Now.AddHours(-1);
         // This method is called on every folder. Return true to cancel
-        var callback = (string name) =>
+        var callback = (string fullPath) =>
         {
           // Skip paths we already added
-          if (!nodeDict.ContainsKey(name))
+          if (!nodeDict.ContainsKey(fullPath))
           {
             // Find the parent:
-            var parentPath = Path.GetDirectoryName(name);
+            var parentPath = Path.GetDirectoryName(fullPath);
             // Update only first level nodes to show progress
             if (nodeDict.TryGetValue(parentPath!, out TreeNode? node) && node == firstNode)
             {
               // We found the parent: add the node
               Invoke(() =>
               {
-                var newNode = node.Nodes.Add(Path.GetFileName(name));
-                nodeDict.Add(name, newNode);
+                var newNode = node.Nodes.Add(fullPath, Path.GetFileName(fullPath));
+                nodeDict.Add(fullPath, newNode);
                 // Show this node
                 newNode.EnsureVisible();
                 _treeView.EndUpdate();
@@ -134,7 +134,7 @@ namespace MOBZize
             // Update the status label USING INVOKE()
             Invoke(() =>
             {
-              _infoLabel.Text = name;
+              _infoLabel.Text = fullPath;
             });
 
             lastUpdateTime = time;
@@ -213,7 +213,7 @@ namespace MOBZize
     {
       foreach (var d in dir.Directories)
       {
-        var child = node.Nodes.Add(d.Name);
+        var child = node.Nodes.Add(d.FullName, d.Name);
         child.Tag = d;
         ColorNode(child, d);
 
@@ -309,7 +309,7 @@ namespace MOBZize
         if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedPath != null)
         {
           _lastOpenedPath = dlg.SelectedPath;
-          await LoadSecurityAsync(dlg.SelectedPath);
+          await LoadSizesAsync(dlg.SelectedPath);
         }
       }
     }
@@ -341,7 +341,7 @@ namespace MOBZize
       }
     }
 
-    private bool _sortAscending = true;
+    private bool _sortAscending = false;
     private int _sortColumnIndex = 1;
 
     private abstract class ListViewSorter : IComparer
@@ -360,7 +360,7 @@ namespace MOBZize
         //if (x == null && y == null)
         //  return 0;
         //if (x != null && y != null)
-          return _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
+        return _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
         //return y == null ? 1 : -1;
       }
     }
@@ -392,7 +392,7 @@ namespace MOBZize
       public FileCountSorter(bool ascending) : base(ascending) { }
 
       public override int CompareItems(SizeItem item1, SizeItem item2)
-      { 
+      {
         if (item1 is SizeDirectory && item2 is SizeDirectory)
           return ((SizeDirectory)item1).TotalFileCount.CompareTo(((SizeDirectory)item2).TotalFileCount);
         if (item1 is SizeFile && item2 is SizeFile)
@@ -435,6 +435,28 @@ namespace MOBZize
       };
       //_listView.Sort();
       //_listView.ListViewItemSorter = null;
+    }
+
+    private void _listView_DoubleClick(object sender, EventArgs e)
+    {
+      // We must have a selected item on the right AND a selected folder
+      if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
+      {
+        // Find the file object
+        var item = (SizeItem)(_listView.SelectedItems[0].Tag);
+        var dir = item as SizeDirectory;
+        if (dir != null)
+        {
+          // Search the tree for the item with the right name
+          var nodes = _treeView.SelectedNode.Nodes.Find(dir.FullName, false);
+          if (nodes.Length == 1)
+          {
+            // If we found one, select it
+            _treeView.SelectedNode = nodes[0];
+            nodes[0].EnsureVisible();
+          }
+        }
+      }
     }
   }
 }
