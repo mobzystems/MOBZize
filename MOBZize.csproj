@@ -9,6 +9,7 @@
     <ApplicationIcon>images\MobZize.ico</ApplicationIcon>
     <Title>MOBZize</Title>
     <Version>0.1.0</Version>
+    <ApplicationHighDpiMode>DpiUnawareGdiScaled</ApplicationHighDpiMode>
   </PropertyGroup>
 
   <ItemGroup>
