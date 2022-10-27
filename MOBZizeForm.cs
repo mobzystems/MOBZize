@@ -1,8 +1,10 @@
+using Microsoft.VisualBasic.Logging;
 using MOBZize.Properties;
 using System.CodeDom;
 using System.Collections;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Xml;
@@ -237,6 +239,20 @@ namespace MOBZize
       }
     }
 
+    private string NiceSize(long bytes)
+    {
+      const long _1kB = 1024L;
+      const long _1MB = _1kB * 1024;
+      const long _1GB = _1MB * 1024;
+      if (bytes > _1GB)
+        return $"{(double)bytes / _1GB:#,,0.0} GB";
+      if (bytes > _1MB)
+        return $"{(double)bytes / _1MB:#,,0.0} MB";
+      if (bytes > _1kB)
+        return $"{(double)bytes / _1kB:#,,0.0} kB";
+      return $"{bytes:#,,0} B";
+    }
+
     /// <summary>
     /// Update the list view when a tree node is clicked
     /// </summary>
@@ -248,17 +264,18 @@ namespace MOBZize
       {
         var dir = (SizeDirectory)e.Node.Tag;
         _statusLabel.Text = $"{dir.FullName} contains {dir.SizeInBytes:#,,0} byte(s).";
-        _infoLabel.Text = $"{dir.Files.Count:#,,0} file(s) (total: {dir.TotalFileCount:#,,0}, {dir.Directories.Count} folder(s) (total: {dir.TotalDirectoryCount:#,,0}). Total size: {dir.SizeInBytes:#,,0} byte(s).";
+        _infoLabel.Text = $"{dir.Files.Count:#,,0} file(s) (total: {dir.TotalFileCount:#,,0}), {dir.Directories.Count} folder(s) (total: {dir.TotalDirectoryCount:#,,0}). Total size: {NiceSize(dir.SizeInBytes)} ({dir.SizeInBytes:#,,0} byte(s)).";
 
         foreach (var subdir in dir.Directories)
         {
           var item = new ListViewItem(subdir.Name);
 
           item.Tag = subdir;
-          item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
+          item.SubItems.Add(NiceSize(subdir.SizeInBytes));
           item.SubItems.Add(PercentageOf(subdir.SizeInBytes, dir.SizeInBytes));
           item.SubItems.Add(subdir.TotalFileCount.ToString("#,,0"));
           item.SubItems.Add(subdir.TotalDirectoryCount.ToString("#,,0"));
+          item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
 
           if (subdir.Exception == null)
             item.ImageKey = ICON_FOLDER;
@@ -273,10 +290,11 @@ namespace MOBZize
           var item = new ListViewItem(file.Name);
 
           item.Tag = file;
-          item.SubItems.Add(file.SizeInBytes.ToString("#,,0"));
+          item.SubItems.Add(NiceSize(file.SizeInBytes));
           item.SubItems.Add(PercentageOf(file.SizeInBytes, dir.SizeInBytes));
-          item.SubItems.Add("-"); // Files
           item.SubItems.Add("-"); // Directories
+          item.SubItems.Add("-"); // Files
+          item.SubItems.Add(file.SizeInBytes.ToString("#,,0"));
 
           if (file.Exception == null)
             item.ImageKey = ICON_FILE;
@@ -332,12 +350,65 @@ namespace MOBZize
     /// <summary>
     /// Default menu item for directories. Hidden if there are custom commands in AppSettings
     /// </summary>
-    private void _showInExplorerMenuItem_Click(object sender, EventArgs e)
+    private void _showDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_treeView.SelectedNode != null)
       {
         var path = ((SizeDirectory)_treeView.SelectedNode.Tag).FullName;
         Process.Start("explorer.exe", $"/select,\"{path}\"");
+      }
+    }
+
+    private void _openDirInExplorerMenuItem_Click(object sender, EventArgs e)
+    {
+      if (_treeView.SelectedNode != null)
+      {
+        var path = ((SizeDirectory)_treeView.SelectedNode.Tag).FullName;
+        Process.Start("explorer.exe", $"\"{path}\"");
+      }
+    }
+
+    private void showItemInExplorerMenuItem_Click(object sender, EventArgs e)
+    {
+      if (_listView.SelectedItems.Count > 0)
+      {
+        var item = ((SizeItem)_listView.SelectedItems[0].Tag)!;
+        Process.Start("explorer.exe", $"/select,\"{item.FullName}\"");
+      }
+    }
+
+
+    private void openItemInExplorerMenuItem_Click(object sender, EventArgs e)
+    {
+      if (_listView.SelectedItems.Count > 0)
+      {
+        var item = ((SizeItem)_listView.SelectedItems[0].Tag)!;
+        if (item is SizeDirectory)
+          Process.Start("explorer.exe", $"\"{item.FullName}\"");
+        else
+          Process.Start("explorer.exe", $"/select,\"{item.FullName}\"");
+      }
+    }
+
+    private void _listView_DoubleClick(object sender, EventArgs e)
+    {
+      // We must have a selected item on the right AND a selected folder
+      if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
+      {
+        // Find the file object
+        var item = (SizeItem)(_listView.SelectedItems[0].Tag);
+        var dir = item as SizeDirectory;
+        if (dir != null)
+        {
+          // Search the tree for the item with the right name
+          var nodes = _treeView.SelectedNode.Nodes.Find(dir.FullName, false);
+          if (nodes.Length == 1)
+          {
+            // If we found one, select it
+            _treeView.SelectedNode = nodes[0];
+            nodes[0].EnsureVisible();
+          }
+        }
       }
     }
 
@@ -429,34 +500,11 @@ namespace MOBZize
       {
         1 => new SizeSorter(_sortAscending), // Size
         2 => new SizeSorter(_sortAscending), // Percentage
-        3 => new FileCountSorter(_sortAscending), // Files
-        4 => new FolderCountSorter(_sortAscending), // Folders
-        _ => new NameSorter(_sortAscending)
+        3 => new FolderCountSorter(_sortAscending), // Folders
+        4 => new FileCountSorter(_sortAscending), // Files
+        5 => new SizeSorter(_sortAscending), // Bytes
+        _ => new NameSorter(_sortAscending) // Name
       };
-      //_listView.Sort();
-      //_listView.ListViewItemSorter = null;
-    }
-
-    private void _listView_DoubleClick(object sender, EventArgs e)
-    {
-      // We must have a selected item on the right AND a selected folder
-      if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
-      {
-        // Find the file object
-        var item = (SizeItem)(_listView.SelectedItems[0].Tag);
-        var dir = item as SizeDirectory;
-        if (dir != null)
-        {
-          // Search the tree for the item with the right name
-          var nodes = _treeView.SelectedNode.Nodes.Find(dir.FullName, false);
-          if (nodes.Length == 1)
-          {
-            // If we found one, select it
-            _treeView.SelectedNode = nodes[0];
-            nodes[0].EnsureVisible();
-          }
-        }
-      }
     }
   }
 }
