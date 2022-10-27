@@ -98,6 +98,7 @@ namespace MOBZize
         // Add the root path as the only node
         _treeView.Nodes.Clear();
         var firstNode = _treeView.Nodes.Add(Path.GetFullPath(path));
+        firstNode.ImageKey = ICON_FOLDER;
         nodeDict.Add(firstNode.Text, firstNode);
         firstNode.Expand();
 
@@ -120,6 +121,7 @@ namespace MOBZize
               Invoke(() =>
               {
                 var newNode = node.Nodes.Add(fullPath, Path.GetFileName(fullPath));
+                newNode.ImageKey = ICON_FOLDER;
                 nodeDict.Add(fullPath, newNode);
                 // Show this node
                 newNode.EnsureVisible();
