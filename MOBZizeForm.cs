@@ -47,10 +47,8 @@ namespace MOBZize
 
       _treeView.ImageList = _imageList;
       _listView.SmallImageList = _imageList;
-      _openButton.ImageList = _imageList;
-      _openButton.ImageKey = ICON_FOLDER_OPEN;
 
-      _statusLabel.Text = "Open a folder to get started.";
+      // _statusLabel.Text = "Open a folder to get started.";
 
       _lastOpenedPath = Environment.CurrentDirectory;
 
@@ -88,9 +86,11 @@ namespace MOBZize
       {
         // Hide the Open button, show the Cancel button
         _cancelled = false;
-        _openPanel.Visible = false;
-        _statusLabel.Text = $"Loading '{path}'...";
-        _cancelButton.Visible = true;
+
+        _loadingLabel.Text = $"Loading '{path}'...";
+
+        _topStatusStrip.Visible = false;
+        _loadingStatusStrip.Visible = true;
 
         // Keep a (case insensitive!) tab on which directory was added to the tree where
         var nodeDict = new Dictionary<string, TreeNode>(StringComparer.OrdinalIgnoreCase);
@@ -138,7 +138,7 @@ namespace MOBZize
             // Update the status label USING INVOKE()
             Invoke(() =>
             {
-              _infoLabel.Text = fullPath;
+              _loadingLabel.Text = fullPath;
             });
 
             lastUpdateTime = time;
@@ -166,15 +166,9 @@ namespace MOBZize
           _treeView.EndUpdate();
         }
 
-        // Swap Open and Cancel again, disable Open while we're displaying
-        _openPanel.Enabled = false;
-        _openPanel.Visible = true;
-        _cancelButton.Visible = false;
-
         if (a != null)
         {
-          _statusLabel.Text = "Displaying results...";
-          _topPanel.Update();
+          _loadingLabel.Text = "Displaying results...";
 
           _treeView.BeginUpdate();
 
@@ -194,13 +188,12 @@ namespace MOBZize
           // Update the window title
           Text = $"{a.FullName} - {_titleBase}";
         }
-        else
-        {
-          _statusLabel.Text = $"Failed to load '{path}'";
-        }
+
+        _topStatusStrip.Visible = true;
+        _loadingStatusStrip.Visible = false;
 
         // Re-enable Open button
-        _openPanel.Enabled = true;
+        _topStatusStrip.Enabled = true;
       }
       finally
       {
@@ -265,8 +258,13 @@ namespace MOBZize
       if (e.Node != null && e.Node.Tag != null)
       {
         var dir = (SizeDirectory)e.Node.Tag;
-        _statusLabel.Text = $"{dir.FullName} contains {dir.SizeInBytes:#,,0} byte(s).";
-        _infoLabel.Text = $"{dir.Files.Count:#,,0} file(s) (total: {dir.TotalFileCount:#,,0}), {dir.Directories.Count} folder(s) (total: {dir.TotalDirectoryCount:#,,0}). Total size: {NiceSize(dir.SizeInBytes)} ({dir.SizeInBytes:#,,0} byte(s)).";
+        _treeStatusLabel.Text = dir.FullName;
+        _listNameStatusLabel.Text = $"{dir.Directories.Count:#,,0} directories, {dir.Files.Count:#,,0} files.";
+        _listSizeStatusLabel.Text = NiceSize(dir.SizeInBytes);
+        _listPercentageStatusLabel.Text = "100%";
+        _listFoldersStatusLabel.Text = dir.TotalDirectoryCount.ToString("#,,0");
+        _listFilesStatusLabel.Text = dir.TotalFileCount.ToString("#,,0");
+        _listBytesStatusLabel.Text = dir.SizeInBytes.ToString("#,,0");
 
         foreach (var subdir in dir.Directories)
         {
@@ -275,8 +273,8 @@ namespace MOBZize
           item.Tag = subdir;
           item.SubItems.Add(NiceSize(subdir.SizeInBytes));
           item.SubItems.Add(PercentageOf(subdir.SizeInBytes, dir.SizeInBytes));
-          item.SubItems.Add(subdir.TotalFileCount.ToString("#,,0"));
           item.SubItems.Add(subdir.TotalDirectoryCount.ToString("#,,0"));
+          item.SubItems.Add(subdir.TotalFileCount.ToString("#,,0"));
           item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
 
           if (subdir.Exception == null)
@@ -305,6 +303,8 @@ namespace MOBZize
 
           _listView.Items.Add(item);
         }
+
+        _upToolButton.Enabled = e.Node.Level > 0;
       }
     }
 
@@ -507,6 +507,38 @@ namespace MOBZize
         5 => new SizeSorter(_sortAscending), // Bytes
         _ => new NameSorter(_sortAscending) // Name
       };
+    }
+
+    private void _listView_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
+    {
+      switch (e.ColumnIndex)
+      {
+        case 1:
+          _listSizeStatusLabel.Width = _listView.Columns[1].Width;
+          break;
+        case 2:
+          _listPercentageStatusLabel.Width = _listView.Columns[2].Width;
+          break;
+        case 3:
+          _listFoldersStatusLabel.Width = _listView.Columns[3].Width;
+          break;
+        case 4:
+          _listFilesStatusLabel.Width = _listView.Columns[4].Width;
+          break;
+        case 5:
+          _listBytesStatusLabel.Width = _listView.Columns[5].Width;
+          break;
+        default:
+          _listNameStatusLabel.Width = _listView.Columns[0].Width;
+          break;
+      }
+    }
+
+    private void _upToolButton_Click(object sender, EventArgs e)
+    {
+      var node = _treeView.SelectedNode;
+      if (node != null && node.Level > 0)
+        _treeView.SelectedNode = node.Parent;
     }
   }
 }
