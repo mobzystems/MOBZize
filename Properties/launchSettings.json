@@ -1,8 +1,7 @@
 {
   "profiles": {
     "MOBZSize": {
-      "commandName": "Project",
-      "commandLineArgs": "c:\\users\\markus\\source\\repos"
+      "commandName": "Project"
     }
   }
 }
