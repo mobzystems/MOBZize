@@ -1,4 +1,5 @@
 using MOBZize.Properties;
+using System.CodeDom;
 using System.Collections;
 using System.Diagnostics;
 
@@ -10,7 +11,6 @@ namespace MOBZize
 
     private ImageList _imageList = new();
 
-    private string? _rootPath;
     private string _lastOpenedPath;
     private bool _cancelled = false;
 
@@ -23,6 +23,10 @@ namespace MOBZize
 
     private string _titleBase = $"MOBZize v{Application.ProductVersion}";
 
+    // For list view sorting: default on size descending
+    private bool _sortAscending = false;
+    private int _sortColumnIndex = 1;
+
     public MOBZizeForm()
     {
       InitializeComponent();
@@ -30,6 +34,7 @@ namespace MOBZize
       Icon = Resources.MobZize;
       Text = _titleBase;
 
+      // Set up the image list at 24x24, 32-bits
       _imageList.ColorDepth = ColorDepth.Depth32Bit;
       _imageList.ImageSize = new Size(24, 24);
 
@@ -55,22 +60,20 @@ namespace MOBZize
     /// </summary>
     private async void Form_Load(object sender, EventArgs e)
     {
-      // [0] is the name of the executable, [1] is a folder to open and [2] is depth
+      // [0] is the name of the executable, [1] is a folder to open
       if (Environment.GetCommandLineArgs().Length > 1)
       {
-        _rootPath = Environment.GetCommandLineArgs()[1];
-
-        await LoadSizesAsync(_rootPath);
-
-        _lastOpenedPath = Path.GetFullPath(_rootPath);
+        string path = Environment.GetCommandLineArgs()[1];
+        await LoadSizesAsync(path);
+        // Save this path for Refresh and Open
+        _lastOpenedPath = Path.GetFullPath(path);
       }
     }
 
     /// <summary>
-    /// Load the security of a folder and (optionally) subfolders to a certain depth
+    /// Load the sizes of a folder and subfolders
     /// </summary>
     /// <param name="path">The path to load. May be relative</param>
-    /// <param name="depth">The depth to load. 0 = all, 1 is path only, 2+ = additional levels</param>
     private async Task LoadSizesAsync(string path)
     {
       _splitContainer.Enabled = false;
@@ -231,6 +234,9 @@ namespace MOBZize
       }
     }
 
+    /// <summary>
+    /// Return a "Nice size" string for a length in bytes, e.g. "1.2 GB"
+    /// </summary>
     private string NiceSize(long bytes)
     {
       const long _1kB = 1024L;
@@ -245,6 +251,9 @@ namespace MOBZize
       return $"{bytes:#,,0} B";
     }
 
+    /// <summary>
+    /// Return a percentage of a whole
+    /// </summary>
     private string PercentageOf(long n, long total)
     {
       if (total == 0)
@@ -253,11 +262,12 @@ namespace MOBZize
     }
 
     #region "List view sorting"
-    private bool _sortAscending = false;
-    private int _sortColumnIndex = 1;
-
+    /// <summary>
+    /// Base class for all list view sorters
+    /// </summary>
     private abstract class ListViewSorter : IComparer
     {
+      // This factor is +1 for ascending or -1 for descending
       protected int _factor;
 
       public ListViewSorter(bool ascending)
@@ -267,16 +277,32 @@ namespace MOBZize
 
       public abstract int CompareItems(SizeItem item1, SizeItem item2);
 
+      /// <summary>
+      /// This is the ICompare.Compare method. Delegates to the abstract CompareItems
+      /// method
+      /// </summary>
+      /// <param name="x">The first object (a list view item). Never null!</param>
+      /// <param name="y">The second object, also never null</param>
       public int Compare(object? x, object? y)
       {
-        //if (x == null && y == null)
-        //  return 0;
-        //if (x != null && y != null)
+        // Compare the SizeItems associated with the list items
+        // Muliply with the factor to support descending sorts
         return _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
-        //return y == null ? 1 : -1;
+      }
+
+      /// <summary>
+      /// Helper method to sort folders (1) before files (2).
+      /// Independent of ascending/descending sort order!
+      /// </summary>
+      public int FoldersFirst(SizeItem item1, SizeItem item2)
+      {
+        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
       }
     }
 
+    /// <summary>
+    /// Sorter on name
+    /// </summary>
     private class NameSorter : ListViewSorter
     {
       public NameSorter(bool ascending) : base(ascending) { }
@@ -285,10 +311,13 @@ namespace MOBZize
       {
         if (item1.GetType() == item2.GetType())
           return string.Compare(item1.Name, item2.Name, true);
-        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
+        return FoldersFirst(item1, item2);
       }
     }
 
+    /// <summary>
+    /// Sort on size (in bytes)
+    /// </summary>
     private class SizeSorter : ListViewSorter
     {
       public SizeSorter(bool ascending) : base(ascending) { }
@@ -299,23 +328,29 @@ namespace MOBZize
       }
     }
 
+    /// <summary>
+    /// Sort on the total number of files
+    /// </summary>
     private class FileCountSorter : ListViewSorter
     {
       public FileCountSorter(bool ascending) : base(ascending) { }
 
       public override int CompareItems(SizeItem item1, SizeItem item2)
       {
+        // dir-dir: total files
         if (item1 is SizeDirectory && item2 is SizeDirectory)
           return ((SizeDirectory)item1).TotalFileCount.CompareTo(((SizeDirectory)item2).TotalFileCount);
+        // file-file: name
         if (item1 is SizeFile && item2 is SizeFile)
           return string.Compare(item1.Name, item2.Name, true);
-        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
+        // otherwise: folder first
+        return FoldersFirst(item1, item2);
       }
     }
 
-    private class FolderCountSorter : ListViewSorter
+    private class DirectoryCountSorter : ListViewSorter
     {
-      public FolderCountSorter(bool ascending) : base(ascending) { }
+      public DirectoryCountSorter(bool ascending) : base(ascending) { }
 
       public override int CompareItems(SizeItem item1, SizeItem item2)
       {
@@ -323,16 +358,22 @@ namespace MOBZize
           return ((SizeDirectory)item1).TotalDirectoryCount.CompareTo(((SizeDirectory)item2).TotalDirectoryCount);
         if (item1 is SizeFile && item2 is SizeFile)
           return string.Compare(item1.Name, item2.Name, true);
-        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
+        // otherwise: folder first
+        return FoldersFirst(item1, item2);
       }
     }
 
+    /// <summary>
+    /// Set the correct list view sorter when a column is clicked
+    /// </summary>
     private void _listView_ColumnClick(object sender, ColumnClickEventArgs e)
     {
+      // When clicking the already selected column, swap ascending/descending
       if (e.Column == _sortColumnIndex)
         _sortAscending = !_sortAscending;
       else
       {
+        // Set a new sort column, ascending
         _sortColumnIndex = e.Column;
         _sortAscending = true;
       }
@@ -341,7 +382,7 @@ namespace MOBZize
       {
         1 => new SizeSorter(_sortAscending), // Size
         2 => new SizeSorter(_sortAscending), // Percentage
-        3 => new FolderCountSorter(_sortAscending), // Folders
+        3 => new DirectoryCountSorter(_sortAscending), // Folders
         4 => new FileCountSorter(_sortAscending), // Files
         5 => new SizeSorter(_sortAscending), // Bytes
         _ => new NameSorter(_sortAscending) // Name
@@ -409,11 +450,69 @@ namespace MOBZize
       }
     }
 
+    /// <summary>
+    /// When a node in the tree is (not left)-clicked, select it
+    /// This sets the right node for the context menu
+    /// </summary>
     private void _treeView_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
     {
-      // Also select items using the right mouse button
       if (e.Node != null && e.Button != MouseButtons.Left)
         _treeView.SelectedNode = e.Node;
+    }
+
+    /// <summary>
+    /// "Open" a directory when it's double-clicked in the list view
+    /// </summary>
+    private void _listView_DoubleClick(object sender, EventArgs e)
+    {
+      // We must have a selected item on the right AND a selected folder
+      if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
+      {
+        // Find the file object
+        var item = (SizeItem)(_listView.SelectedItems[0].Tag);
+        var dir = item as SizeDirectory;
+        if (dir != null)
+        {
+          // Search the tree for the item with the right name
+          var nodes = _treeView.SelectedNode.Nodes.Find(dir.FullName, false);
+          if (nodes.Length == 1)
+          {
+            // If we found one, select it
+            _treeView.SelectedNode = nodes[0];
+            nodes[0].EnsureVisible();
+          }
+        }
+      }
+    }
+
+    /// <summary>
+    /// Mirror the widths of list view columns in the status labels of its status strip
+    /// </summary>
+    private void _listView_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
+    {
+      switch (e.ColumnIndex)
+      {
+        case 0:
+          _listNameStatusLabel.Width = _listView.Columns[0].Width;
+          break;
+        case 1:
+          _listSizeStatusLabel.Width = _listView.Columns[1].Width;
+          break;
+        case 2:
+          _listPercentageStatusLabel.Width = _listView.Columns[2].Width;
+          break;
+        case 3:
+          _listFoldersStatusLabel.Width = _listView.Columns[3].Width;
+          break;
+        case 4:
+          _listFilesStatusLabel.Width = _listView.Columns[4].Width;
+          break;
+        case 5:
+          _listBytesStatusLabel.Width = _listView.Columns[5].Width;
+          break;
+        default:
+          throw new NotImplementedException($"No status label for index {e.ColumnIndex}");
+      }
     }
 
     /// <summary>
@@ -444,7 +543,8 @@ namespace MOBZize
     }
 
     /// <summary>
-    /// Default menu item for directories. Hidden if there are custom commands in AppSettings
+    /// "Reveal" a directory in Explorer, i.e. show its parent with
+    /// this directory selected
     /// </summary>
     private void _showDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
@@ -455,6 +555,9 @@ namespace MOBZize
       }
     }
 
+    /// <summary>
+    /// "Open" a directory in Explorer, i.e. show its contents
+    /// </summary>
     private void _openDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_treeView.SelectedNode != null)
@@ -464,6 +567,9 @@ namespace MOBZize
       }
     }
 
+    /// <summary>
+    /// Reveal an item in Explorer
+    /// </summary>
     private void showItemInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_listView.SelectedItems.Count > 0)
@@ -473,6 +579,9 @@ namespace MOBZize
       }
     }
 
+    /// <summary>
+    /// Open an item directory or reveal a file in Explorer
+    /// </summary>
     private void openItemInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_listView.SelectedItems.Count > 0)
@@ -485,53 +594,9 @@ namespace MOBZize
       }
     }
 
-    private void _listView_DoubleClick(object sender, EventArgs e)
-    {
-      // We must have a selected item on the right AND a selected folder
-      if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
-      {
-        // Find the file object
-        var item = (SizeItem)(_listView.SelectedItems[0].Tag);
-        var dir = item as SizeDirectory;
-        if (dir != null)
-        {
-          // Search the tree for the item with the right name
-          var nodes = _treeView.SelectedNode.Nodes.Find(dir.FullName, false);
-          if (nodes.Length == 1)
-          {
-            // If we found one, select it
-            _treeView.SelectedNode = nodes[0];
-            nodes[0].EnsureVisible();
-          }
-        }
-      }
-    }
-
-    private void _listView_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
-    {
-      switch (e.ColumnIndex)
-      {
-        case 1:
-          _listSizeStatusLabel.Width = _listView.Columns[1].Width;
-          break;
-        case 2:
-          _listPercentageStatusLabel.Width = _listView.Columns[2].Width;
-          break;
-        case 3:
-          _listFoldersStatusLabel.Width = _listView.Columns[3].Width;
-          break;
-        case 4:
-          _listFilesStatusLabel.Width = _listView.Columns[4].Width;
-          break;
-        case 5:
-          _listBytesStatusLabel.Width = _listView.Columns[5].Width;
-          break;
-        default:
-          _listNameStatusLabel.Width = _listView.Columns[0].Width;
-          break;
-      }
-    }
-
+    /// <summary>
+    /// Go to parent folder
+    /// </summary>
     private void _upToolButton_Click(object sender, EventArgs e)
     {
       var node = _treeView.SelectedNode;
@@ -539,14 +604,22 @@ namespace MOBZize
         _treeView.SelectedNode = node.Parent;
     }
 
+    /// <summary>
+    /// Refresh, i.e. reload the current folder structure
+    /// </summary>
     private async void _refreshToolButton_Click(object sender, EventArgs e)
     {
       await LoadSizesAsync(_lastOpenedPath);
     }
 
+    /// <summary>
+    /// Prepare the list view context menu. There can be no list item selected
+    /// and then we need to disable some menu items
+    /// </summary>
     private void _listViewContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
     {
       var hasSelectedItem = _listView.SelectedItems.Count > 0;
+
       _showItemInExplorerMenuItem.Enabled = hasSelectedItem;
       _openItemInExplorerMenuItem.Enabled = hasSelectedItem;
     }
