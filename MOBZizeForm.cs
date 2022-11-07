@@ -27,6 +27,8 @@ namespace MOBZize
     private bool _sortAscending = false;
     private int _sortColumnIndex = 1;
 
+    private ToolStripStatusLabel[] _columnStatusLabels;
+
     public MOBZizeForm()
     {
       InitializeComponent();
@@ -53,6 +55,16 @@ namespace MOBZize
 
       // Start by sorting on size descending
       _listView.ListViewItemSorter = new SizeSorter(false);
+
+      // The status labels corresponding to the list view columns
+      _columnStatusLabels = new[] {
+        _listNameStatusLabel,
+        _listSizeStatusLabel,
+        _listPercentageStatusLabel,
+        _listFoldersStatusLabel,
+        _listFilesStatusLabel,
+        _listBytesStatusLabel
+      };
     }
 
     /// <summary>
@@ -205,7 +217,6 @@ namespace MOBZize
     /// <summary>
     /// Add a node and subnodes to the tree
     /// </summary>
-    /// <returns>Whether the tree contains any items that shoud be visible (unused)</returns>
     private void AddNodes(SizeDirectory dir, TreeNode node)
     {
       foreach (var d in dir.Directories)
@@ -228,6 +239,7 @@ namespace MOBZize
         node.ImageKey = ICON_ERROR;
         node.SelectedImageKey = ICON_ERROR;
       }
+      else
       {
         node.ImageKey = ICON_FOLDER;
         node.SelectedImageKey = ICON_FOLDER_OPEN;
@@ -402,7 +414,7 @@ namespace MOBZize
       {
         var dir = (SizeDirectory)e.Node.Tag;
         _treeStatusLabel.Text = dir.FullName;
-        _listNameStatusLabel.Text = $"{dir.Directories.Count:#,,0} directories, {dir.Files.Count:#,,0} files";
+        _listNameStatusLabel.Text = $"{dir.Directories.Count:#,,0} folder(s), {dir.Files.Count:#,,0} file(s)";
         _listSizeStatusLabel.Text = NiceSize(dir.SizeInBytes);
         _listPercentageStatusLabel.Text = "100%";
         _listFoldersStatusLabel.Text = dir.TotalDirectoryCount.ToString("#,,0");
@@ -411,38 +423,32 @@ namespace MOBZize
 
         foreach (var subdir in dir.Directories)
         {
-          var item = new ListViewItem(subdir.Name);
+          var item = new ListViewItem(new string[] {
+            subdir.Name,
+            NiceSize(subdir.SizeInBytes),
+            PercentageOf(subdir.SizeInBytes, dir.SizeInBytes),
+            subdir.TotalDirectoryCount.ToString("#,,0"),
+            subdir.TotalFileCount.ToString("#,,0"),
+            subdir.SizeInBytes.ToString("#,,0")
+          }, subdir.Exception != null ? ICON_ERROR : ICON_FOLDER);
 
           item.Tag = subdir;
-          item.SubItems.Add(NiceSize(subdir.SizeInBytes));
-          item.SubItems.Add(PercentageOf(subdir.SizeInBytes, dir.SizeInBytes));
-          item.SubItems.Add(subdir.TotalDirectoryCount.ToString("#,,0"));
-          item.SubItems.Add(subdir.TotalFileCount.ToString("#,,0"));
-          item.SubItems.Add(subdir.SizeInBytes.ToString("#,,0"));
-
-          if (subdir.Exception == null)
-            item.ImageKey = ICON_FOLDER;
-          else
-            item.ImageKey = ICON_ERROR;
 
           _listView.Items.Add(item);
         }
 
         foreach (var file in dir.Files)
         {
-          var item = new ListViewItem(file.Name);
+          var item = new ListViewItem(new string[] {
+            file.Name,
+            NiceSize(file.SizeInBytes),
+            PercentageOf(file.SizeInBytes, dir.SizeInBytes),
+            "-", // Directories
+            "-", // Files
+            file.SizeInBytes.ToString("#,,0")
+          }, file.Exception != null ? ICON_ERROR : ICON_FILE);
 
           item.Tag = file;
-          item.SubItems.Add(NiceSize(file.SizeInBytes));
-          item.SubItems.Add(PercentageOf(file.SizeInBytes, dir.SizeInBytes));
-          item.SubItems.Add("-"); // Directories
-          item.SubItems.Add("-"); // Files
-          item.SubItems.Add(file.SizeInBytes.ToString("#,,0"));
-
-          if (file.Exception == null)
-            item.ImageKey = ICON_FILE;
-          else
-            item.ImageKey = ICON_ERROR;
 
           _listView.Items.Add(item);
         }
@@ -491,29 +497,11 @@ namespace MOBZize
     /// </summary>
     private void _listView_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
     {
-      switch (e.ColumnIndex)
-      {
-        case 0:
-          _listNameStatusLabel.Width = _listView.Columns[0].Width;
-          break;
-        case 1:
-          _listSizeStatusLabel.Width = _listView.Columns[1].Width;
-          break;
-        case 2:
-          _listPercentageStatusLabel.Width = _listView.Columns[2].Width;
-          break;
-        case 3:
-          _listFoldersStatusLabel.Width = _listView.Columns[3].Width;
-          break;
-        case 4:
-          _listFilesStatusLabel.Width = _listView.Columns[4].Width;
-          break;
-        case 5:
-          _listBytesStatusLabel.Width = _listView.Columns[5].Width;
-          break;
-        default:
-          throw new NotImplementedException($"No status label for index {e.ColumnIndex}");
-      }
+      if (e.ColumnIndex < 0 || e.ColumnIndex >= _columnStatusLabels.Length)
+        throw new ArgumentOutOfRangeException($"No status label for column index {e.ColumnIndex}");
+
+      // Set the width of the status label to the width of the column
+      _columnStatusLabels[e.ColumnIndex].Width = _listView.Columns[e.ColumnIndex].Width;
     }
 
     /// <summary>
@@ -543,6 +531,8 @@ namespace MOBZize
       _cancelled = true;
     }
 
+    private void OpenInExplorer(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
+    private void RevealInExplorer(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
     /// <summary>
     /// "Reveal" a directory in Explorer, i.e. show its parent with
     /// this directory selected
@@ -550,10 +540,7 @@ namespace MOBZize
     private void _showDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_treeView.SelectedNode != null)
-      {
-        var path = ((SizeDirectory)_treeView.SelectedNode.Tag).FullName;
-        Process.Start("explorer.exe", $"/select,\"{path}\"");
-      }
+        RevealInExplorer(((SizeDirectory)_treeView.SelectedNode.Tag).FullName);
     }
 
     /// <summary>
@@ -562,10 +549,7 @@ namespace MOBZize
     private void _openDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_treeView.SelectedNode != null)
-      {
-        var path = ((SizeDirectory)_treeView.SelectedNode.Tag).FullName;
-        Process.Start("explorer.exe", $"\"{path}\"");
-      }
+        OpenInExplorer(((SizeDirectory)_treeView.SelectedNode.Tag).FullName);
     }
 
     /// <summary>
@@ -574,10 +558,7 @@ namespace MOBZize
     private void showItemInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_listView.SelectedItems.Count > 0)
-      {
-        var item = ((SizeItem)_listView.SelectedItems[0].Tag)!;
-        Process.Start("explorer.exe", $"/select,\"{item.FullName}\"");
-      }
+        RevealInExplorer(((SizeItem)_listView.SelectedItems[0].Tag)!.FullName);
     }
 
     /// <summary>
@@ -589,9 +570,9 @@ namespace MOBZize
       {
         var item = ((SizeItem)_listView.SelectedItems[0].Tag)!;
         if (item is SizeDirectory)
-          Process.Start("explorer.exe", $"\"{item.FullName}\"");
+          OpenInExplorer(item.FullName);
         else
-          Process.Start("explorer.exe", $"/select,\"{item.FullName}\"");
+          RevealInExplorer(item.FullName);
       }
     }
 
