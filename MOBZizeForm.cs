@@ -29,6 +29,12 @@ namespace MOBZize
 
     private ToolStripStatusLabel[] _columnStatusLabels;
 
+    // The current selected list item (a SizeItem, i.e. directory or file)
+    private SizeItem SelectedListItem => (SizeItem)_listView.SelectedItems[0].Tag;
+    // The current selected tree directory
+    private SizeDirectory SelectedTreeDirectory => (SizeDirectory)_treeView.SelectedNode.Tag;
+
+
     public MOBZizeForm()
     {
       InitializeComponent();
@@ -476,8 +482,7 @@ namespace MOBZize
       if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
       {
         // Find the file object
-        var item = (SizeItem)(_listView.SelectedItems[0].Tag);
-        var dir = item as SizeDirectory;
+        var dir = SelectedListItem as SizeDirectory;
         if (dir != null)
         {
           // Search the tree for the item with the right name
@@ -540,7 +545,7 @@ namespace MOBZize
     private void _showDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_treeView.SelectedNode != null)
-        RevealInExplorer(((SizeDirectory)_treeView.SelectedNode.Tag).FullName);
+        RevealInExplorer(SelectedTreeDirectory.FullName);
     }
 
     /// <summary>
@@ -549,7 +554,7 @@ namespace MOBZize
     private void _openDirInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_treeView.SelectedNode != null)
-        OpenInExplorer(((SizeDirectory)_treeView.SelectedNode.Tag).FullName);
+        OpenInExplorer(SelectedTreeDirectory.FullName);
     }
 
     /// <summary>
@@ -558,7 +563,7 @@ namespace MOBZize
     private void showItemInExplorerMenuItem_Click(object sender, EventArgs e)
     {
       if (_listView.SelectedItems.Count > 0)
-        RevealInExplorer(((SizeItem)_listView.SelectedItems[0].Tag)!.FullName);
+        RevealInExplorer(SelectedListItem.FullName);
     }
 
     /// <summary>
@@ -568,7 +573,7 @@ namespace MOBZize
     {
       if (_listView.SelectedItems.Count > 0)
       {
-        var item = ((SizeItem)_listView.SelectedItems[0].Tag)!;
+        var item = SelectedListItem;
         if (item is SizeDirectory)
           OpenInExplorer(item.FullName);
         else
