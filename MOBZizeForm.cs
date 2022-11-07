@@ -283,21 +283,17 @@ namespace MOBZize
       /// </summary>
       /// <param name="x">The first object (a list view item). Never null!</param>
       /// <param name="y">The second object, also never null</param>
-      public int Compare(object? x, object? y)
-      {
+      public int Compare(object? x, object? y) =>
         // Compare the SizeItems associated with the list items
-        // Muliply with the factor to support descending sorts
-        return _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
-      }
+        // Multiply with the factor to support descending sorts
+        _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
 
       /// <summary>
       /// Helper method to sort folders (1) before files (2).
       /// Independent of ascending/descending sort order!
       /// </summary>
-      public int FoldersFirst(SizeItem item1, SizeItem item2)
-      {
-        return _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
-      }
+      public int FoldersFirst(SizeItem item1, SizeItem item2) =>
+        _factor * (item1 is SizeDirectory ? 1 : 2).CompareTo(item2 is SizeDirectory ? 1 : 2);
     }
 
     /// <summary>
@@ -322,45 +318,52 @@ namespace MOBZize
     {
       public SizeSorter(bool ascending) : base(ascending) { }
 
+      public override int CompareItems(SizeItem item1, SizeItem item2) =>
+        item1.SizeInBytes.CompareTo(item2.SizeInBytes);
+    }
+
+    private abstract class DirectoryOnlySorter : ListViewSorter
+    {
+      public DirectoryOnlySorter(bool ascending) : base(ascending) { }
+
+      public abstract int CompareDirectories(SizeDirectory dir1, SizeDirectory dir2);
+
+      /// <summary>
+      /// Sort directories only; sort files on name, after directories
+      /// </summary>
       public override int CompareItems(SizeItem item1, SizeItem item2)
       {
-        return item1.SizeInBytes.CompareTo(item2.SizeInBytes);
+        // dir-dir: total files
+        if (item1 is SizeDirectory dir1 && item2 is SizeDirectory dir2)
+          return CompareDirectories(dir1, dir2);
+        // file-file: name
+        if (item1 is SizeFile && item2 is SizeFile)
+          return _factor * string.Compare(item1.Name, item2.Name, true);
+        // otherwise: folder first
+        return FoldersFirst(item1, item2);
       }
     }
 
     /// <summary>
     /// Sort on the total number of files
     /// </summary>
-    private class FileCountSorter : ListViewSorter
+    private class FileCountSorter : DirectoryOnlySorter
     {
       public FileCountSorter(bool ascending) : base(ascending) { }
 
-      public override int CompareItems(SizeItem item1, SizeItem item2)
-      {
-        // dir-dir: total files
-        if (item1 is SizeDirectory && item2 is SizeDirectory)
-          return ((SizeDirectory)item1).TotalFileCount.CompareTo(((SizeDirectory)item2).TotalFileCount);
-        // file-file: name
-        if (item1 is SizeFile && item2 is SizeFile)
-          return string.Compare(item1.Name, item2.Name, true);
-        // otherwise: folder first
-        return FoldersFirst(item1, item2);
-      }
+      public override int CompareDirectories(SizeDirectory dir1, SizeDirectory dir2) =>
+        dir1.TotalFileCount.CompareTo(dir2.TotalFileCount);
     }
 
-    private class DirectoryCountSorter : ListViewSorter
+    /// <summary>
+    /// Sort on the total number of directories
+    /// </summary>
+    private class DirectoryCountSorter : DirectoryOnlySorter
     {
       public DirectoryCountSorter(bool ascending) : base(ascending) { }
 
-      public override int CompareItems(SizeItem item1, SizeItem item2)
-      {
-        if (item1 is SizeDirectory && item2 is SizeDirectory)
-          return ((SizeDirectory)item1).TotalDirectoryCount.CompareTo(((SizeDirectory)item2).TotalDirectoryCount);
-        if (item1 is SizeFile && item2 is SizeFile)
-          return string.Compare(item1.Name, item2.Name, true);
-        // otherwise: folder first
-        return FoldersFirst(item1, item2);
-      }
+      public override int CompareDirectories(SizeDirectory dir1, SizeDirectory dir2) =>
+        dir1.TotalDirectoryCount.CompareTo(dir2.TotalDirectoryCount);
     }
 
     /// <summary>
@@ -380,11 +383,9 @@ namespace MOBZize
 
       _listView.ListViewItemSorter = e.Column switch
       {
-        1 => new SizeSorter(_sortAscending), // Size
-        2 => new SizeSorter(_sortAscending), // Percentage
+        1 or 2 or 5 => new SizeSorter(_sortAscending), // 1: Size, 2: Percentage, 5: Bytes
         3 => new DirectoryCountSorter(_sortAscending), // Folders
         4 => new FileCountSorter(_sortAscending), // Files
-        5 => new SizeSorter(_sortAscending), // Bytes
         _ => new NameSorter(_sortAscending) // Name
       };
     }
