@@ -5,6 +5,8 @@ VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MOBZize", "MOBZize.csproj", "{9EFBD025-B6A5-4608-91D3-9AFBF6DACC78}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MOBZizeSetup", "MOBZizeSetup\MOBZizeSetup.vdproj", "{FED9BDC7-EB40-4464-9EE4-B204F4FF59C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,8 @@ Global
 		{9EFBD025-B6A5-4608-91D3-9AFBF6DACC78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9EFBD025-B6A5-4608-91D3-9AFBF6DACC78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9EFBD025-B6A5-4608-91D3-9AFBF6DACC78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FED9BDC7-EB40-4464-9EE4-B204F4FF59C6}.Debug|Any CPU.ActiveCfg = Debug
+		{FED9BDC7-EB40-4464-9EE4-B204F4FF59C6}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
