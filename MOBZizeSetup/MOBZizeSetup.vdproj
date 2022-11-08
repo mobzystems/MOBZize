@@ -37,6 +37,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
         "Release"
         {
@@ -53,6 +61,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
     }
     "Deployable"
@@ -140,15 +156,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MOBZize"
-        "ProductCode" = "8:{B15CDC5E-5CEA-4758-AEBE-F13F7D78BB38}"
-        "PackageCode" = "8:{A4EA685B-03C1-45ED-B6B5-2BA2E354A3CE}"
+        "ProductCode" = "8:{9EC94BD0-83B9-4464-A702-81085BEC2A68}"
+        "PackageCode" = "8:{776C3421-C525-425D-8603-3B6578498B22}"
         "UpgradeCode" = "8:{5817CD90-2ECF-4D4E-A25D-482E19BA39F1}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:0.2.1"
+        "ProductVersion" = "8:0.2.2"
         "Manufacturer" = "8:MOBZystems"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://www.mobzystems.com/Tools/MOBZize"

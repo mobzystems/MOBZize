@@ -92,17 +92,24 @@ namespace MOBZize
         _lastOpenedPath = Path.GetFullPath(path);
       }
 
-      var client = new HttpClient();
-      var versionString = await client.GetFromJsonAsync<string>($"https://www.mobzystems.com/api/toolversion?t={ToolName}") ?? "";
-      if (versionString != "")
+      try
       {
-        var version = new Version(versionString);
-        if (version > new Version(Application.ProductVersion))
+        var client = new HttpClient();
+        var versionString = await client.GetFromJsonAsync<string>($"https://www.mobzystems.com/api/toolversion?t={ToolName}") ?? "";
+        if (versionString != "")
         {
-          _updateAvailableButton.Text = "Update available";
-          _updateAvailableButton.ToolTipText = $"{ToolName} {version.ToString(3)} is available";
-          _updateAvailableButton.Visible = true;
+          var version = new Version(versionString);
+          if (version > new Version(Application.ProductVersion))
+          {
+            _updateAvailableButton.Text = "Update available";
+            _updateAvailableButton.ToolTipText = $"{ToolName} {version.ToString(3)} is available";
+            _updateAvailableButton.Visible = true;
+          }
         }
+      }
+      catch
+      {
+        // Ignore errors checking for updates
       }
     }
 
