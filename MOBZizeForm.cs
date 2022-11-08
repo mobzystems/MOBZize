@@ -73,6 +73,9 @@ namespace MOBZize
         _listFilesStatusLabel,
         _listBytesStatusLabel
       };
+
+      foreach (var label in _columnStatusLabels)
+        label.Text = "";
     }
 
     /// <summary>
