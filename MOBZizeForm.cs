@@ -2,12 +2,14 @@ using MOBZize.Properties;
 using System.CodeDom;
 using System.Collections;
 using System.Diagnostics;
+using System.Net.Http.Json;
 
 namespace MOBZize
 {
   public partial class MOBZizeForm : Form
   {
     private const int UpdateMs = 200;
+    private const string ToolName = "MOBZize";
 
     private ImageList _imageList = new();
 
@@ -21,7 +23,7 @@ namespace MOBZize
 
     private const string ICON_ERROR = nameof(Resources.exclamation);
 
-    private string _titleBase = $"MOBZize v{Application.ProductVersion}";
+    private string _titleBase = $"{ToolName} v{Application.ProductVersion}";
 
     // For list view sorting: default on size descending
     private bool _sortAscending = false;
@@ -86,6 +88,26 @@ namespace MOBZize
         // Save this path for Refresh and Open
         _lastOpenedPath = Path.GetFullPath(path);
       }
+
+      var client = new HttpClient();
+      var versionString = await client.GetFromJsonAsync<string>($"https://www.mobzystems.com/api/toolversion?t={ToolName}") ?? "";
+      if (versionString != "")
+      {
+        var version = new Version(versionString);
+        if (version > new Version(Application.ProductVersion))
+        {
+          _updateAvailableButton.Text = "Update available";
+          _updateAvailableButton.ToolTipText = $"{ToolName} {version.ToString(3)} is available";
+          _updateAvailableButton.Visible = true;
+        }
+      }
+    }
+
+    private async Task<string> GetToolVersion(string toolName)
+    {
+      var client = new HttpClient();
+      var version = await client.GetFromJsonAsync<string>("https://www.mobzystems.com/api/toolversion?t=" + toolName);
+      return version ?? "";
     }
 
     /// <summary>
@@ -538,6 +560,7 @@ namespace MOBZize
 
     private void OpenInExplorer(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
     private void RevealInExplorer(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
+
     /// <summary>
     /// "Reveal" a directory in Explorer, i.e. show its parent with
     /// this directory selected
@@ -609,6 +632,23 @@ namespace MOBZize
 
       _showItemInExplorerMenuItem.Enabled = hasSelectedItem;
       _openItemInExplorerMenuItem.Enabled = hasSelectedItem;
+    }
+
+    /// <summary>
+    /// Open the tool home page
+    /// </summary>
+    private void _updateAvailableButton_Click(object sender, EventArgs e)
+    {
+      try
+      {
+        var pi = new ProcessStartInfo($"https://www.mobzystems.com/Tools/{ToolName}");
+        pi.UseShellExecute = true;
+        Process.Start(pi);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show(this, ex.Message, "Could not open web page", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
     }
   }
 }

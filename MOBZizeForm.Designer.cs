@@ -57,7 +57,8 @@
       this._topStatusStrip = new System.Windows.Forms.StatusStrip();
       this._openButton = new System.Windows.Forms.ToolStripDropDownButton();
       this._refreshToolButton = new System.Windows.Forms.ToolStripDropDownButton();
-      this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+      this._updateAvailableButton = new System.Windows.Forms.ToolStripDropDownButton();
+      this._topStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
       this._upToolButton = new System.Windows.Forms.ToolStripDropDownButton();
       this._loadingStatusStrip = new System.Windows.Forms.StatusStrip();
       this._cancelButton = new System.Windows.Forms.ToolStripDropDownButton();
@@ -147,12 +148,12 @@
             this._showDirInExplorerMenuItem,
             this._openDirInExplorerMenuItem});
       this._treeViewContextMenu.Name = "_treeViewContextMenu";
-      this._treeViewContextMenu.Size = new System.Drawing.Size(238, 70);
+      this._treeViewContextMenu.Size = new System.Drawing.Size(238, 48);
       // 
       // _showDirInExplorerMenuItem
       // 
       this._showDirInExplorerMenuItem.Name = "_showDirInExplorerMenuItem";
-      this._showDirInExplorerMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)
+      this._showDirInExplorerMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.S)));
       this._showDirInExplorerMenuItem.Size = new System.Drawing.Size(237, 22);
       this._showDirInExplorerMenuItem.Text = "Show in &Explorer";
@@ -161,7 +162,7 @@
       // _openDirInExplorerMenuItem
       // 
       this._openDirInExplorerMenuItem.Name = "_openDirInExplorerMenuItem";
-      this._openDirInExplorerMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)
+      this._openDirInExplorerMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.O)));
       this._openDirInExplorerMenuItem.Size = new System.Drawing.Size(237, 22);
       this._openDirInExplorerMenuItem.Text = "&Open in Explorer";
@@ -225,16 +226,16 @@
       this._listViewContextMenu.Size = new System.Drawing.Size(163, 48);
       this._listViewContextMenu.Opening += new System.ComponentModel.CancelEventHandler(this._listViewContextMenu_Opening);
       // 
-      // showItemInExplorerMenuItem
+      // _showItemInExplorerMenuItem
       // 
-      this._showItemInExplorerMenuItem.Name = "showItemInExplorerMenuItem";
+      this._showItemInExplorerMenuItem.Name = "_showItemInExplorerMenuItem";
       this._showItemInExplorerMenuItem.Size = new System.Drawing.Size(162, 22);
       this._showItemInExplorerMenuItem.Text = "Show in &Explorer";
       this._showItemInExplorerMenuItem.Click += new System.EventHandler(this.showItemInExplorerMenuItem_Click);
       // 
-      // openItemInExplorerMenuItem
+      // _openItemInExplorerMenuItem
       // 
-      this._openItemInExplorerMenuItem.Name = "openItemInExplorerMenuItem";
+      this._openItemInExplorerMenuItem.Name = "_openItemInExplorerMenuItem";
       this._openItemInExplorerMenuItem.Size = new System.Drawing.Size(162, 22);
       this._openItemInExplorerMenuItem.Text = "&Open in Explorer";
       this._openItemInExplorerMenuItem.Click += new System.EventHandler(this.openItemInExplorerMenuItem_Click);
@@ -309,7 +310,8 @@
       this._topStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this._openButton,
             this._refreshToolButton,
-            this.toolStripStatusLabel1,
+            this._updateAvailableButton,
+            this._topStatusLabel,
             this._upToolButton});
       this._topStatusStrip.Location = new System.Drawing.Point(0, 0);
       this._topStatusStrip.Name = "_topStatusStrip";
@@ -343,11 +345,22 @@
       this._refreshToolButton.ToolTipText = "Refresh this folder";
       this._refreshToolButton.Click += new System.EventHandler(this._refreshToolButton_Click);
       // 
-      // toolStripStatusLabel1
+      // _updateAvailableButton
       // 
-      this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-      this.toolStripStatusLabel1.Size = new System.Drawing.Size(881, 33);
-      this.toolStripStatusLabel1.Spring = true;
+      this._updateAvailableButton.Image = global::MOBZize.Properties.Resources.info_circle;
+      this._updateAvailableButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this._updateAvailableButton.Name = "_updateAvailableButton";
+      this._updateAvailableButton.ShowDropDownArrow = false;
+      this._updateAvailableButton.Size = new System.Drawing.Size(44, 36);
+      this._updateAvailableButton.Text = "...";
+      this._updateAvailableButton.Visible = false;
+      this._updateAvailableButton.Click += new System.EventHandler(this._updateAvailableButton_Click);
+      // 
+      // _topStatusLabel
+      // 
+      this._topStatusLabel.Name = "_topStatusLabel";
+      this._topStatusLabel.Size = new System.Drawing.Size(806, 33);
+      this._topStatusLabel.Spring = true;
       // 
       // _upToolButton
       // 
@@ -458,7 +471,8 @@
     private StatusStrip _loadingStatusStrip;
     private ToolStripDropDownButton _cancelButton;
     private ToolStripStatusLabel _loadingLabel;
-    private ToolStripStatusLabel toolStripStatusLabel1;
+    private ToolStripStatusLabel _topStatusLabel;
     private ToolStripDropDownButton _upToolButton;
-  }
+        private ToolStripDropDownButton _updateAvailableButton;
+    }
 }
