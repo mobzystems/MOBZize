@@ -1,36 +1,35 @@
-﻿using System.Security.Policy;
+﻿using System.IO;
+using System.Security.Policy;
 
 namespace MOBZize
 {
   /// <summary>
-  /// Base class for security information for a file or directory
+  /// Base Immutable record for size and path information for a file or directory
   /// </summary>
-  internal class SizeItem
+  internal record SizeItem(
+    string Name, // file.ext
+    string FullName, // drive:\path\file.ext
+    string RelativePath, // subdir\file.ext 
+    long SizeInBytes
+  )
   {
-    // Base name of this item (file.ext)
-    public string Name { get; init; }
-    // Full name of this item (drive:\path\file.ext)
-    public string FullName { get; init; }
-    // The relative path of the item. "." for the root item
-    public string RelativePath { get; init; }
+    // An optional exception that occurred retrieving the item
     public Exception? Exception { get; protected set; }
 
-    // The size of the item in bytes
-    public long SizeInBytes { get; protected set; }
-
-    protected SizeItem(string fullPath, string rootPath)
-    {
-      Name = Path.GetFileName(fullPath);
-      FullName = fullPath;
-      RelativePath = Path.GetRelativePath(rootPath, fullPath);
-      SizeInBytes = 0;
-    }
+    protected SizeItem(string fullPath, string rootPath) :
+      this(
+        Name: Path.GetFileName(fullPath),
+        FullName: fullPath,
+        RelativePath: Path.GetRelativePath(rootPath, fullPath),
+        SizeInBytes: 0
+      )
+    { }
   }
 
   /// <summary>
-  /// Security info for a file
+  /// Size info for a file
   /// </summary>
-  internal class SizeFile : SizeItem
+  internal record SizeFile : SizeItem
   {
     public SizeFile(string fullPath, string rootPath) :
       base(fullPath, rootPath)
@@ -47,9 +46,9 @@ namespace MOBZize
   }
 
   /// <summary>
-  /// Security info for a directory and subdirectories
+  /// Size info for a directory and subdirectories
   /// </summary>
-  internal class SizeDirectory : SizeItem
+  internal record SizeDirectory : SizeItem
   {
     public List<SizeDirectory> Directories { get; init; } = new();
     public List<SizeFile> Files { get; init; } = new();
@@ -57,7 +56,7 @@ namespace MOBZize
     public int TotalFileCount { get; init; }
     public int TotalDirectoryCount { get; init; }
 
-    protected SizeDirectory(string fullPath, string rootPath, int maxDepth, int currentDepth, Func<string, bool> callback) :
+    protected SizeDirectory(string fullPath, string rootPath, Func<string, bool> callback) :
       base(fullPath, rootPath)
     {
       TotalFileCount = 0;
@@ -75,27 +74,24 @@ namespace MOBZize
           TotalFileCount++;
         }
 
-        if (maxDepth == 0 || currentDepth < maxDepth)
+        foreach (var name in Directory.GetDirectories(fullPath))
         {
-          foreach (var name in Directory.GetDirectories(fullPath))
-          {
-            // Do the callback to see if we should cancel
-            // (and notify the UI of this directory)
-            if (callback(name!))
-              break;
-            // Not cancelled? Then recurse here:
-            var newDir = new SizeDirectory(name, rootPath, maxDepth, currentDepth + 1, callback);
-            Directories.Add(newDir);
-            // Add it to our size and counters
-            SizeInBytes += newDir.SizeInBytes;
+          // Do the callback to see if we should cancel
+          // (and notify the UI of this directory)
+          if (callback(name!))
+            break;
+          // Not cancelled? Then recurse here:
+          var newDir = new SizeDirectory(name, rootPath, callback);
+          Directories.Add(newDir);
+          // Add it to our size and counters
+          SizeInBytes += newDir.SizeInBytes;
 
-            TotalFileCount += newDir.TotalFileCount;
-            TotalDirectoryCount += newDir.TotalDirectoryCount;
-          }
-
-          // Count the directorues themselves
-          TotalDirectoryCount += Directories.Count();
+          TotalFileCount += newDir.TotalFileCount;
+          TotalDirectoryCount += newDir.TotalDirectoryCount;
         }
+
+        // Count the directorues themselves
+        TotalDirectoryCount += Directories.Count();
       }
       catch (Exception ex)
       {
@@ -108,17 +104,16 @@ namespace MOBZize
     /// Load security information from a path
     /// </summary>
     /// <param name="path">The (full or relative) 'root' path</param>
-    /// <param name="depth">0 = recursive, 1 = path only, 2+ = more levels of children</param>
     /// <param name="callback">A function to call upon entering each directory. Can return true to cancel the operation</param>
     /// <returns>The AclDirectory of the root path. Contains all other (files and) directories</returns>
     /// <exception cref="DirectoryNotFoundException"></exception>
-    public static SizeDirectory FromPath(string path, int depth, Func<string, bool> callback)
+    public static SizeDirectory FromPath(string path, Func<string, bool> callback)
     {
       if (!Directory.Exists(path))
         throw new DirectoryNotFoundException($"Directory '{path}' does not exist");
 
       var rootPath = Path.GetFullPath(path);
-      var rootItem = new SizeDirectory(rootPath, rootPath, depth, 1, callback);
+      var rootItem = new SizeDirectory(rootPath, rootPath, callback);
       return rootItem;
     }
   }

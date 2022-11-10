@@ -193,28 +193,11 @@ namespace MOBZize
           return _cancelled;
         };
 
-        // This is the result:
-        SizeDirectory? a = null;
-
         try
         {
           // Block updates to the tree
           _treeView.BeginUpdate();
-          a = await Task.Run(() => SizeDirectory.FromPath(path, 0, callback));
-        }
-        catch (Exception ex)
-        {
-          // We failed somehow - no result
-          MessageBox.Show(this, ex.Message, $"Error loading '{path}'", MessageBoxButtons.OK, MessageBoxIcon.Error);
-          a = null;
-        }
-        finally
-        {
-          _treeView.EndUpdate();
-        }
-
-        if (a != null)
-        {
+          SizeDirectory rootDir = await Task.Run(() => SizeDirectory.FromPath(path, callback));
           _loadingLabel.Text = "Displaying results...";
 
           _treeView.BeginUpdate();
@@ -222,18 +205,27 @@ namespace MOBZize
           _treeView.Nodes.Clear();
 
           // Add the root node with its full path
-          var rootNode = _treeView.Nodes.Add(a.FullName);
-          ColorNode(rootNode, a);
+          var rootNode = _treeView.Nodes.Add(rootDir.FullName);
+          ColorNode(rootNode, rootDir);
 
-          rootNode.Tag = a;
-          AddNodes(a, rootNode);
+          rootNode.Tag = rootDir;
+          AddNodes(rootDir, rootNode);
           rootNode.Expand();
           _treeView.SelectedNode = rootNode;
 
           _treeView.EndUpdate();
 
           // Update the window title
-          Text = $"{a.FullName} - {_titleBase}";
+          Text = $"{rootDir.FullName} - {_titleBase}";
+        }
+        catch (Exception ex)
+        {
+          // We failed somehow - no result
+          MessageBox.Show(this, ex.Message, $"Error loading '{path}'", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+          _treeView.EndUpdate();
         }
 
         _topStatusStrip.Visible = true;
