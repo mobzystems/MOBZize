@@ -460,36 +460,28 @@ namespace MOBZize
         _listBytesStatusLabel.Text = dir.SizeInBytes.ToString("#,,0");
 
         foreach (var subdir in dir.Directories)
-        {
-          var item = new ListViewItem(new string[] {
+          _listView.Items.Add(new ListViewItem(new[] {
             subdir.Name,
             NiceSize(subdir.SizeInBytes),
             PercentageOf(subdir.SizeInBytes, dir.SizeInBytes),
             subdir.TotalDirectoryCount.ToString("#,,0"),
             subdir.TotalFileCount.ToString("#,,0"),
             subdir.SizeInBytes.ToString("#,,0")
-          }, subdir.Exception != null ? ICON_ERROR : ICON_FOLDER);
-
-          item.Tag = subdir;
-
-          _listView.Items.Add(item);
-        }
+          },
+          subdir.Exception != null ? ICON_ERROR : ICON_FOLDER)
+          { Tag = subdir });
 
         foreach (var file in dir.Files)
-        {
-          var item = new ListViewItem(new string[] {
+          _listView.Items.Add(new ListViewItem(new[] {
             file.Name,
             NiceSize(file.SizeInBytes),
             PercentageOf(file.SizeInBytes, dir.SizeInBytes),
             "-", // Directories
             "-", // Files
             file.SizeInBytes.ToString("#,,0")
-          }, file.Exception != null ? ICON_ERROR : ICON_FILE);
-
-          item.Tag = file;
-
-          _listView.Items.Add(item);
-        }
+          },
+          file.Exception != null ? ICON_ERROR : ICON_FILE)
+          { Tag = file });
 
         _upToolButton.Enabled = e.Node.Level > 0;
       }
