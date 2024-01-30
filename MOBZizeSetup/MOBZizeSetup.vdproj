@@ -39,11 +39,14 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
             }
         }
         "Release"
@@ -55,7 +58,7 @@
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
-        "Compression" = "3:2"
+        "Compression" = "3:3"
         "SignOutput" = "11:FALSE"
         "CertificateFile" = "8:"
         "PrivateKeyFile" = "8:"
@@ -63,11 +66,14 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
             }
         }
     }
@@ -94,7 +100,7 @@
                 "InstallUrl" = "8:https://dotnet.microsoft.com/download/dotnet-core/[NetCoreVerMajorDotMinor]"
                 "IsNETCore" = "11:TRUE"
                 "Architecture" = "2:0"
-                "Runtime" = "2:0"
+                "Runtime" = "2:1"
                 }
             }
         }
@@ -157,7 +163,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MOBZize"
         "ProductCode" = "8:{9EC94BD0-83B9-4464-A702-81085BEC2A68}"
-        "PackageCode" = "8:{776C3421-C525-425D-8603-3B6578498B22}"
+        "PackageCode" = "8:{513CFB23-76E7-4990-ADBA-EFF6C50C2F30}"
         "UpgradeCode" = "8:{5817CD90-2ECF-4D4E-A25D-482E19BA39F1}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -611,7 +617,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F857E547EB0D4802B2026A2C005A0DF2"
             {
-            "SourcePath" = "8:..\\bin\\Release\\net6.0-windows\\publish\\win-x64\\MOBZize.exe"
+            "SourcePath" = "8:..\\bin\\Release\\net8.0-windows7.0\\publish\\win-x64\\MOBZize.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_17EB12DD12E94D7292BA5E4F24C1C6E5"
@@ -633,7 +639,7 @@
             "OutputGroupCanonicalName" = "8:PublishItems"
             "OutputProjectGuid" = "8:{9EFBD025-B6A5-4608-91D3-9AFBF6DACC78}"
             "ShowKeyOutput" = "11:TRUE"
-            "PublishProfilePath" = "8:Properties\\PublishProfiles\\FolderProfile.pubxml"
+            "PublishProfilePath" = "8:Properties\\PublishProfiles\\SetupProfile.pubxml"
                 "ExcludeFilters"
                 {
                 }
