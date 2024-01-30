@@ -1,7 +1,4 @@
-﻿using System.IO;
-using System.Security.Policy;
-
-namespace MOBZize
+﻿namespace MOBZize
 {
   /// <summary>
   /// Base Immutable record for size and path information for a file or directory
@@ -10,7 +7,8 @@ namespace MOBZize
     string Name, // file.ext
     string FullName, // drive:\path\file.ext
     string RelativePath, // subdir\file.ext 
-    long SizeInBytes
+    long SizeInBytes,
+    DateTime LastModified
   )
   {
     // An optional exception that occurred retrieving the item
@@ -21,7 +19,8 @@ namespace MOBZize
         Name: Path.GetFileName(fullPath),
         FullName: fullPath,
         RelativePath: Path.GetRelativePath(rootPath, fullPath),
-        SizeInBytes: 0
+        SizeInBytes: 0,
+        LastModified: new FileInfo(fullPath).LastWriteTime
       )
     { }
   }

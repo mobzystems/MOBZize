@@ -1,5 +1,4 @@
 using MOBZize.Properties;
-using System.CodeDom;
 using System.Collections;
 using System.Diagnostics;
 using System.Net.Http.Json;
@@ -32,7 +31,7 @@ namespace MOBZize
     private ToolStripStatusLabel[] _columnStatusLabels;
 
     // The current selected list item (a SizeItem, i.e. directory or file)
-    private SizeItem SelectedListItem => (SizeItem)_listView.SelectedItems[0].Tag;
+    private SizeItem SelectedListItem => (SizeItem)_listView.SelectedItems[0].Tag!;
     // The current selected tree directory
     private SizeDirectory SelectedTreeDirectory => (SizeDirectory)_treeView.SelectedNode.Tag;
 
@@ -71,7 +70,8 @@ namespace MOBZize
         _listPercentageStatusLabel,
         _listFoldersStatusLabel,
         _listFilesStatusLabel,
-        _listBytesStatusLabel
+        _listBytesStatusLabel,
+        _listLastModifiedStatusLabel
       };
 
       foreach (var label in _columnStatusLabels)
@@ -113,12 +113,12 @@ namespace MOBZize
       }
     }
 
-    private async Task<string> GetToolVersion(string toolName)
-    {
-      var client = new HttpClient();
-      var version = await client.GetFromJsonAsync<string>("https://www.mobzystems.com/api/toolversion?t=" + toolName);
-      return version ?? "";
-    }
+    //private async Task<string> GetToolVersion(string toolName)
+    //{
+    //  var client = new HttpClient();
+    //  var version = await client.GetFromJsonAsync<string>("https://www.mobzystems.com/api/toolversion?t=" + toolName);
+    //  return version ?? "";
+    //}
 
     /// <summary>
     /// Load the sizes of a folder and subfolders
@@ -328,7 +328,7 @@ namespace MOBZize
       public int Compare(object? x, object? y) =>
         // Compare the SizeItems associated with the list items
         // Multiply with the factor to support descending sorts
-        _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag, (SizeItem)((ListViewItem)y!).Tag);
+        _factor * CompareItems((SizeItem)((ListViewItem)x!).Tag!, (SizeItem)((ListViewItem)y!).Tag!);
 
       /// <summary>
       /// Helper method to sort folders (1) before files (2).
@@ -339,7 +339,7 @@ namespace MOBZize
     }
 
     /// <summary>
-    /// Sorter on name
+    /// Sorter on name, actually a case insensitive string sorter that keeps folders first
     /// </summary>
     private class NameSorter : ListViewSorter
     {
@@ -350,6 +350,16 @@ namespace MOBZize
         if (item1.GetType() == item2.GetType())
           return string.Compare(item1.Name, item2.Name, true);
         return FoldersFirst(item1, item2);
+      }
+    }
+
+    private class DateSorter : ListViewSorter
+    {
+      public DateSorter(bool ascending) : base(ascending) { }
+
+      public override int CompareItems(SizeItem item1, SizeItem item2)
+      {
+        return DateTime.Compare(item1.LastModified, item2.LastModified);
       }
     }
 
@@ -428,6 +438,7 @@ namespace MOBZize
         1 or 2 or 5 => new SizeSorter(_sortAscending), // 1: Size, 2: Percentage, 5: Bytes
         3 => new DirectoryCountSorter(_sortAscending), // Folders
         4 => new FileCountSorter(_sortAscending), // Files
+        6 => new DateSorter(_sortAscending), // Last modified date
         _ => new NameSorter(_sortAscending) // Name
       };
     }
@@ -458,7 +469,8 @@ namespace MOBZize
             PercentageOf(subdir.SizeInBytes, dir.SizeInBytes),
             subdir.TotalDirectoryCount.ToString("#,,0"),
             subdir.TotalFileCount.ToString("#,,0"),
-            subdir.SizeInBytes.ToString("#,,0")
+            subdir.SizeInBytes.ToString("#,,0"),
+            subdir.LastModified.ToString("yyyy-MM-dd HH:mm:ss")
           },
           subdir.Exception != null ? ICON_ERROR : ICON_FOLDER)
           { Tag = subdir });
@@ -470,13 +482,20 @@ namespace MOBZize
             PercentageOf(file.SizeInBytes, dir.SizeInBytes),
             "-", // Directories
             "-", // Files
-            file.SizeInBytes.ToString("#,,0")
+            file.SizeInBytes.ToString("#,,0"),
+            file.LastModified.ToString("yyyy-MM-dd HH:mm:ss")
           },
           file.Exception != null ? ICON_ERROR : ICON_FILE)
           { Tag = file });
 
         _upToolButton.Enabled = e.Node.Level > 0;
       }
+    }
+
+    private void _treeViewContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+      _showDirInExplorerMenuItem.Enabled = _treeView.SelectedNode != null;
+      _openDirInExplorerMenuItem.Enabled = _treeView.SelectedNode != null;
     }
 
     /// <summary>
@@ -493,6 +512,26 @@ namespace MOBZize
     /// "Open" a directory when it's double-clicked in the list view
     /// </summary>
     private void _listView_DoubleClick(object sender, EventArgs e)
+    {
+      OpenSelectedFolder();
+    }
+
+    private void _listView_KeyPress(object sender, KeyPressEventArgs e)
+    {
+      switch (e.KeyChar)
+      {
+        case '\r': // Enter
+          OpenSelectedFolder();
+          e.Handled = true;
+          break;
+        case '\b': // Backspace
+          GotoParentDirectory();
+          e.Handled = true;
+          break;
+      }
+    }
+
+    private void OpenSelectedFolder()
     {
       // We must have a selected item on the right AND a selected folder
       if (_listView.SelectedItems.Count > 0 && _treeView.SelectedNode != null)
@@ -552,7 +591,7 @@ namespace MOBZize
       _cancelled = true;
     }
 
-    private void OpenInExplorer(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
+    private void OpenInExplorer(string path) => Process.Start("explorer.exe", $"\"{path}\"");
     private void RevealInExplorer(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
 
     /// <summary>
@@ -603,6 +642,11 @@ namespace MOBZize
     /// </summary>
     private void _upToolButton_Click(object sender, EventArgs e)
     {
+      GotoParentDirectory();
+    }
+
+    private void GotoParentDirectory()
+    {
       var node = _treeView.SelectedNode;
       if (node != null && node.Level > 0)
         _treeView.SelectedNode = node.Parent;
@@ -622,10 +666,14 @@ namespace MOBZize
     /// </summary>
     private void _listViewContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
     {
-      var hasSelectedItem = _listView.SelectedItems.Count > 0;
+      var hasSelectedItem = _listView.SelectedItems.Count == 1;
+      var hasFolderSelected = false;
+      if (hasSelectedItem)
+        hasFolderSelected = SelectedListItem is SizeDirectory;
 
       _showItemInExplorerMenuItem.Enabled = hasSelectedItem;
-      _openItemInExplorerMenuItem.Enabled = hasSelectedItem;
+      _openItemInExplorerMenuItem.Enabled = hasFolderSelected;
+      // _openItemInExplorerMenuItem.Visible = false;
     }
 
     /// <summary>
