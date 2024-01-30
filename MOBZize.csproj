@@ -2,15 +2,17 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>images\MobZize.ico</ApplicationIcon>
     <Title>MOBZize</Title>
-    <Version>0.2.2</Version>
+    <Version>0.2.3</Version>
     <ApplicationHighDpiMode>DpiUnawareGdiScaled</ApplicationHighDpiMode>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <!--<PublishAot>false</PublishAot>-->
+    <!--<ApplicationManifest>manifest.xml</ApplicationManifest>-->
   </PropertyGroup>
 
   <ItemGroup>
